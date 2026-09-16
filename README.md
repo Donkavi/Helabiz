@@ -31,6 +31,12 @@ survives restarts. `npm run db:reset` deletes it.
 Point `MONGODB_URI` at MongoDB Atlas or a local `mongod` whenever you want a real server. It is **required** in
 production — the app refuses to start without it rather than silently using a throwaway database.
 
+`MONGODB_DB` decides which database on that server Helabiz uses, regardless of the database named in the URI's
+path. On a shared cluster, leave it as `helabiz` so nothing mixes with another app's collections.
+
+> Only one `next dev` can hold port 3000. If a previous one is still running it keeps serving the old connection,
+> so stop it before switching databases — the new process will otherwise start on port 3001 and exit.
+
 ### Scripts
 
 | Script | What it does |
@@ -49,6 +55,7 @@ Copy `.env.example` to `.env.local`. Everything except `AUTH_SECRET` has a worki
 | Variable | Purpose |
 | --- | --- |
 | `MONGODB_URI` | Connection string. Blank in development uses the embedded database. |
+| `MONGODB_DB` | Database name, `helabiz` by default. This **overrides** whatever database the URI's path names, so pointing at a shared cluster keeps Helabiz's collections in their own database. |
 | `AUTH_SECRET` | Session signing key. Generate with `npx auth secret`. |
 | `NEXT_PUBLIC_APP_URL` | Public base URL of the app. |
 | `NEXT_PUBLIC_SITE_DOMAIN` | Root domain published websites hang off (`helabiz.lk`). |
