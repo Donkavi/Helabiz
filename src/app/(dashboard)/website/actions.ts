@@ -10,7 +10,7 @@ import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { Domain } from "@/models/Domain";
 import { fieldErrorsFrom, type ActionState } from "@/lib/validations/errors";
-import { assertWithinLimit, LimitError, hasFeature } from "@/services/limits-service";
+import { assertWithinLimit, checkLimit, LimitError, hasFeature, type LimitBlock } from "@/services/limits-service";
 import {
   blankPageSections,
   createWebsiteFromTemplate,
@@ -80,20 +80,28 @@ const pageSchema = z.object({
   slug: z.string().max(60).optional(),
 });
 
-export async function createPageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export type CreatePageResult =
+  | { ok: true; pageId: string }
+  | { ok: false; error: string; blocked?: LimitBlock };
+
+/**
+ * Adds a page. Returns the new page's id so the builder can jump straight to it,
+ * and a structured `blocked` payload when the plan is the reason it failed — the
+ * UI turns that into an upgrade prompt instead of a bare error.
+ */
+export async function addPageAction(title: string): Promise<CreatePageResult> {
   const { businessId } = await requireBusiness();
-  const parsed = pageSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, fieldErrors: fieldErrorsFrom(parsed.error) };
+
+  const parsed = pageSchema.safeParse({ title });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Give the page a name" };
+  }
 
   const website = await websiteFor(businessId);
   if (!website) return { ok: false, error: "Create your website first" };
 
-  try {
-    await assertWithinLimit(businessId, "pages");
-  } catch (error) {
-    if (error instanceof LimitError) return { ok: false, error: error.message };
-    throw error;
-  }
+  const blocked = await checkLimit(businessId, "pages");
+  if (blocked) return { ok: false, error: blocked.message, blocked };
 
   const slug = await uniqueSlug(parsed.data.slug || parsed.data.title, async (candidate) => {
     const hit = await WebsitePage.findOne({ websiteId: website._id, slug: candidate }).select("_id").lean();
@@ -102,7 +110,7 @@ export async function createPageAction(_prev: ActionState, formData: FormData): 
 
   const last = await WebsitePage.findOne({ websiteId: website._id }).sort({ sortOrder: -1 }).select("sortOrder").lean();
 
-  await WebsitePage.create({
+  const page = await WebsitePage.create({
     businessId,
     websiteId: website._id,
     title: parsed.data.title,
@@ -115,7 +123,14 @@ export async function createPageAction(_prev: ActionState, formData: FormData): 
 
   await touchWebsite(businessId, String(website._id));
   revalidatePath("/website/pages");
-  return { ok: true };
+  revalidatePath("/website");
+  return { ok: true, pageId: String(page._id) };
+}
+
+/** Reports whether another page can be added, for disabling the button up front. */
+export async function pageLimitAction(): Promise<LimitBlock | null> {
+  const { businessId } = await requireBusiness();
+  return checkLimit(businessId, "pages");
 }
 
 export async function updatePageAction(
@@ -166,12 +181,8 @@ export async function duplicatePageAction(pageId: string) {
   const page = await WebsitePage.findOne({ _id: pageId, businessId }).lean();
   if (!page) return { ok: false as const, error: "Page not found" };
 
-  try {
-    await assertWithinLimit(businessId, "pages");
-  } catch (error) {
-    if (error instanceof LimitError) return { ok: false as const, error: error.message };
-    throw error;
-  }
+  const blocked = await checkLimit(businessId, "pages");
+  if (blocked) return { ok: false as const, error: blocked.message, blocked };
 
   const slug = await uniqueSlug(`${page.slug}-copy`, async (candidate) => {
     const hit = await WebsitePage.findOne({ websiteId: page.websiteId, slug: candidate }).select("_id").lean();

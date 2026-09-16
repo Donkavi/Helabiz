@@ -9,6 +9,7 @@ import {
   EyeOff,
   GripVertical,
   Home,
+  Lock,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -38,8 +39,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn, relativeTime, slugify } from "@/lib/utils";
+import { PlanLimitDialog, type LimitBlockInfo } from "@/components/dashboard/plan-limit-dialog";
 import {
-  createPageAction,
+  addPageAction,
   deletePageAction,
   duplicatePageAction,
   reorderPagesAction,
@@ -60,7 +62,9 @@ export type PageRow = {
   noIndex: boolean;
 };
 
-export function PagesManager({ pages }: { pages: PageRow[] }) {
+export type PageAllowance = { used: number; max: number; planId: string; planName: string };
+
+export function PagesManager({ pages, allowance }: { pages: PageRow[]; allowance: PageAllowance }) {
   const router = useRouter();
   // Optimistic order held only while a reorder is in flight; otherwise the
   // server's order is the source of truth.
@@ -70,18 +74,42 @@ export function PagesManager({ pages }: { pages: PageRow[] }) {
   const [addOpen, setAddOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<PageRow | null>(null);
   const [deleting, setDeleting] = React.useState<PageRow | null>(null);
+  const [blocked, setBlocked] = React.useState<LimitBlockInfo | null>(null);
   const [pending, startTransition] = React.useTransition();
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, message: string) =>
+  const run = (
+    fn: () => Promise<{ ok: boolean; error?: string; blocked?: LimitBlockInfo }>,
+    message: string,
+  ) =>
     startTransition(async () => {
       const result = await fn();
       if (!result.ok) {
-        toast.error(result.error ?? "That did not work");
+        // A plan limit gets a real upgrade prompt, not a toast.
+        if (result.blocked) setBlocked(result.blocked);
+        else toast.error(result.error ?? "That did not work");
         return;
       }
       toast.success(message);
       router.refresh();
     });
+
+  const atLimit = Number.isFinite(allowance.max) && allowance.used >= allowance.max;
+
+  /** Shows the upgrade prompt without a round trip when the plan is already full. */
+  const requestNewPage = () => {
+    if (atLimit) {
+      setBlocked({
+        key: "pages",
+        used: allowance.used,
+        max: allowance.max,
+        planId: allowance.planId,
+        planName: allowance.planName,
+        message: `The ${allowance.planName} plan covers ${allowance.max} website pages, and you have used them all.`,
+      });
+      return;
+    }
+    setAddOpen(true);
+  };
 
   const commitOrder = (next: PageRow[]) => {
     setPendingOrder(next);
@@ -94,10 +122,25 @@ export function PagesManager({ pages }: { pages: PageRow[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus className="size-4" />
-          Add page
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <p className="mr-auto text-[13px] text-muted-foreground">
+          {Number.isFinite(allowance.max) ? (
+            <>
+              <span className={cn("font-semibold", atLimit ? "text-warning" : "text-foreground")}>
+                {allowance.used} of {allowance.max}
+              </span>{" "}
+              pages used on the {allowance.planName} plan
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-foreground">{allowance.used}</span> pages · unlimited on{" "}
+              {allowance.planName}
+            </>
+          )}
+        </p>
+        <Button onClick={requestNewPage} variant={atLimit ? "outline" : "default"}>
+          {atLimit ? <Lock className="size-4" /> : <Plus className="size-4" />}
+          {atLimit ? "Upgrade to add pages" : "Add page"}
         </Button>
       </div>
 
@@ -197,8 +240,10 @@ export function PagesManager({ pages }: { pages: PageRow[] }) {
         ))}
       </ul>
 
-      <AddPageDialog open={addOpen} onOpenChange={setAddOpen} />
+      <AddPageDialog open={addOpen} onOpenChange={setAddOpen} onBlocked={setBlocked} />
       {editing && <EditPageDialog page={editing} onClose={() => setEditing(null)} />}
+
+      <PlanLimitDialog block={blocked} onOpenChange={() => setBlocked(null)} action="add another page" />
 
       <Dialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
         <DialogContent size="sm">
@@ -231,7 +276,15 @@ export function PagesManager({ pages }: { pages: PageRow[] }) {
   );
 }
 
-function AddPageDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function AddPageDialog({
+  open,
+  onOpenChange,
+  onBlocked,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onBlocked: (block: LimitBlockInfo) => void;
+}) {
   const router = useRouter();
   const [title, setTitle] = React.useState("");
   const [pending, startTransition] = React.useTransition();
@@ -247,17 +300,20 @@ function AddPageDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    const data = new FormData();
-    data.set("title", title);
     startTransition(async () => {
-      const result = await createPageAction(null, data);
-      if (result?.ok === false) {
-        setError(result.error ?? Object.values(result.fieldErrors ?? {})[0] ?? "Could not add the page");
+      const result = await addPageAction(title);
+      if (!result.ok) {
+        if (result.blocked) {
+          onOpenChange(false);
+          onBlocked(result.blocked);
+          return;
+        }
+        setError(result.error);
         return;
       }
       toast.success("Page added");
       onOpenChange(false);
-      router.refresh();
+      router.push(`/website/builder/${result.pageId}`);
     });
   };
 

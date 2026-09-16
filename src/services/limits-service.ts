@@ -55,22 +55,49 @@ export async function usageFor(businessId: string): Promise<UsageSnapshot> {
   };
 }
 
-/** Throws a LimitError when adding one more of `key` would exceed the plan. */
-export async function assertWithinLimit(businessId: string, key: keyof UsageSnapshot & string) {
-  const usage = await usageFor(businessId);
-  const entry = usage[key as "orders"];
-  if (!entry || entry.limit === UNLIMITED) return;
+export type LimitKey = "orders" | "products" | "pages" | "websites" | "team";
 
-  if (entry.used >= entry.limit) {
-    const labels: Record<string, string> = {
-      orders: `Your ${usage.plan.name} plan allows ${entry.limit} orders per month. Upgrade to keep taking orders.`,
-      products: `Your ${usage.plan.name} plan allows ${entry.limit} products. Upgrade to add more.`,
-      pages: `Your ${usage.plan.name} plan allows ${entry.limit} website pages. Upgrade to add more.`,
-      websites: `Your ${usage.plan.name} plan allows ${entry.limit} website. Upgrade to create another.`,
-      team: `Your ${usage.plan.name} plan allows ${entry.limit} staff accounts. Upgrade to invite more.`,
-    };
-    throw new LimitError(labels[key] ?? "You have reached a plan limit.", key as keyof Plan["limits"]);
-  }
+/** What the UI needs to explain a limit and offer the right way past it. */
+export type LimitBlock = {
+  key: LimitKey;
+  used: number;
+  max: number;
+  planId: string;
+  planName: string;
+  message: string;
+};
+
+const LIMIT_MESSAGES: Record<LimitKey, (plan: string, max: number) => string> = {
+  orders: (plan, max) => `The ${plan} plan covers ${max} orders a month, and this month is full.`,
+  products: (plan, max) => `The ${plan} plan covers ${max} products, and you have used them all.`,
+  pages: (plan, max) => `The ${plan} plan covers ${max} website pages, and you have used them all.`,
+  websites: (plan, max) => `The ${plan} plan covers ${max} website.`,
+  team: (plan, max) => `The ${plan} plan covers ${max} staff accounts.`,
+};
+
+/**
+ * Non-throwing limit check. Returns the detail a screen needs to show a real
+ * upgrade prompt rather than a bare error.
+ */
+export async function checkLimit(businessId: string, key: LimitKey): Promise<LimitBlock | null> {
+  const usage = await usageFor(businessId);
+  const entry = usage[key];
+  if (!entry || entry.limit === UNLIMITED || entry.used < entry.limit) return null;
+
+  return {
+    key,
+    used: entry.used,
+    max: entry.limit,
+    planId: usage.plan.id,
+    planName: usage.plan.name,
+    message: LIMIT_MESSAGES[key](usage.plan.name, entry.limit),
+  };
+}
+
+/** Throws a LimitError when adding one more of `key` would exceed the plan. */
+export async function assertWithinLimit(businessId: string, key: LimitKey) {
+  const block = await checkLimit(businessId, key);
+  if (block) throw new LimitError(block.message, key as keyof Plan["limits"]);
 }
 
 /** Feature gates that are on/off rather than counted. */

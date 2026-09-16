@@ -5,6 +5,7 @@ import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { PageHeader } from "@/components/ui/page-header";
+import { usageFor } from "@/services/limits-service";
 import { PagesManager } from "./pages-manager";
 
 export const metadata: Metadata = { title: "Website pages" };
@@ -16,7 +17,10 @@ export default async function WebsitePagesPage() {
   const website = await Website.findOne({ businessId }).select("_id").lean();
   if (!website) redirect("/website");
 
-  const pages = await WebsitePage.find({ websiteId: website._id, businessId }).sort({ sortOrder: 1 }).lean();
+  const [pages, usage] = await Promise.all([
+    WebsitePage.find({ websiteId: website._id, businessId }).sort({ sortOrder: 1 }).lean(),
+    usageFor(businessId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -25,6 +29,12 @@ export default async function WebsitePagesPage() {
         description="Every page on your website. Drag to change the order they appear in your menu."
       />
       <PagesManager
+        allowance={{
+          used: usage.pages.used,
+          max: usage.pages.limit,
+          planId: usage.plan.id,
+          planName: usage.plan.name,
+        }}
         pages={serialize(pages).map((page) => ({
           id: String(page._id),
           title: page.title,
