@@ -232,14 +232,15 @@ export function ProductGridSection({ node, ctx }: P) {
 
   return (
     <div className="w-in">
-      <SectionHeading
-        title={activeCategory ? activeCategory.name : str(p.title)}
-        subtitle={activeCategory ? undefined : str(p.subtitle)}
-        align={node.styles.align ?? "center"}
-      />
+      <SectionHeading title={str(p.title)} subtitle={str(p.subtitle)} align={node.styles.align ?? "center"} />
 
       {bool(p.showFilters, false) && !ctx.editor && (
-        <CatalogueFilterBar ctx={ctx} filters={filters} count={products.length} />
+        <CatalogueFilterBar
+          ctx={ctx}
+          filters={filters}
+          count={products.length}
+          activeCategoryName={activeCategory?.name}
+        />
       )}
 
       <div className="w-grid" style={{ "--sec-cols": num(p.columns, 4) } as React.CSSProperties}>
