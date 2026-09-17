@@ -65,6 +65,32 @@ Copy `.env.example` to `.env.local`. Everything except `AUTH_SECRET` has a worki
 | `COMING_SOON_BYPASS` | The secret that gets you past the teaser while it is up. |
 | `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` | Shown on the teaser. Blank leaves the buttons off. |
 
+### Language
+
+The public marketing pages — home, pricing, templates, and the nav and footer
+around them — are in Sinhala and English. Sinhala is the default, because that is
+who Helabiz is for; the toggle sits in the nav.
+
+The choice is a cookie (`helabiz_lang`) read on the server in
+`src/app/(marketing)/layout.tsx`, so a page arrives already translated, its
+`<title>` included, rather than flipping language once JavaScript loads. That is
+the trade for these pages rendering per request instead of being static — they
+touch no database, so it costs little.
+
+All the copy lives in `src/lib/i18n/marketing.ts`, one object per language,
+structured by page. `src/lib/i18n/index.ts` must stay free of `next/headers`
+because client components import from it; the cookie read lives in
+`src/lib/i18n/server.ts`.
+
+Plan names, taglines and feature lists come from the dictionary rather than
+`src/lib/plans.ts`, since that file is shared with the signed-in app. The numbers
+a plan allows still come from `plans.ts` — there is one source of truth for what
+a plan actually does.
+
+Not yet translated: the dashboard, the builder, sign-in and sign-up, and the
+chrome on published customer websites. The coming-soon page has its own toggle,
+since it ships both languages in the page and is gated separately.
+
 ### The launch gate
 
 `COMING_SOON="true"` makes `src/proxy.ts` rewrite every request to `/coming-soon` —

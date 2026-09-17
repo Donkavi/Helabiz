@@ -5,36 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TEMPLATES } from "@/lib/website/templates";
 import { artFor } from "@/lib/website/template-art";
+import { getLang } from "@/lib/i18n/server";
+import { marketingCopy } from "@/lib/i18n/marketing";
 
-export const metadata: Metadata = {
-  title: "Website templates",
-  description:
-    "Eight designed website templates for Sri Lankan businesses — fashion, bakery, restaurant, beauty, electronics, photography and services.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = marketingCopy(await getLang()).templatesPage;
+  return { title: t.metaTitle, description: t.metaDescription };
+}
 
-export default function TemplatesPage() {
+export default async function TemplatesPage() {
+  const t = marketingCopy(await getLang()).templatesPage;
+
   return (
     <>
       <section className="border-b border-border">
         <div className="mx-auto max-w-6xl px-5 py-20 text-center lg:px-8">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-primary">Templates</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-primary">{t.eyebrow}</p>
           <h1 className="mx-auto mt-3 max-w-2xl text-[38px] font-semibold tracking-[-0.035em] sm:text-5xl">
-            Start from a design, not a blank page
+            {t.title}
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-relaxed text-muted-foreground text-pretty">
-            Every template arrives with its pages, sections, fonts and colours already set. Swap in your products and
-            your words — change anything you like. Two are free forever; the rest come with any paid plan, and you can
-            preview all of them before you decide.
+            {t.lede}
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button size="lg" asChild>
               <Link href="/sign-up">
-                Start free
+                {t.startFree}
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/pricing">See pricing</Link>
+              <Link href="/pricing">{t.seePricing}</Link>
             </Button>
           </div>
         </div>
@@ -49,7 +50,7 @@ export default function TemplatesPage() {
             <article key={template.id} id={template.id} className="group scroll-mt-24">
               <Link
                 href={`/templates/${template.id}`}
-                aria-label={`View the ${template.name} template`}
+                aria-label={`${t.viewTemplate} — ${template.name}`}
                 className="group/tile relative block aspect-16/11 overflow-hidden rounded-2xl border border-border transition-all duration-200 hover:border-primary/40 hover:shadow-md"
                 style={{ background: template.theme.background }}
               >
@@ -116,7 +117,7 @@ export default function TemplatesPage() {
                 <span className="absolute inset-0 flex items-center justify-center bg-foreground/35 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover/tile:opacity-100">
                   <span className="inline-flex items-center gap-2 rounded-lg bg-background px-4 py-2.5 text-[13.5px] font-semibold shadow-lg">
                     <Eye className="size-4 text-primary" />
-                    View template
+                    {t.viewTemplate}
                   </span>
                 </span>
               </Link>
@@ -131,12 +132,12 @@ export default function TemplatesPage() {
                 <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
                   <Badge variant="soft">{template.category}</Badge>
                   {premium ? (
-                    <Badge variant="muted" title="Included from the Starter plan">
+                    <Badge variant="muted">
                       <Lock className="size-3" />
                       Starter
                     </Badge>
                   ) : (
-                    <Badge variant="success">Free</Badge>
+                    <Badge variant="success">{t.free}</Badge>
                   )}
                 </div>
               </div>
@@ -154,12 +155,12 @@ export default function TemplatesPage() {
                 <Button size="sm" asChild>
                   <Link href={`/templates/${template.id}`}>
                     <Eye className="size-3.5" />
-                    View template
+                    {t.viewTemplate}
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link href={premium ? "/pricing" : `/sign-up?template=${template.id}`}>
-                    {premium ? "Unlock with Starter" : "Use this template"}
+                    {premium ? t.unlock : t.useTemplate}
                     <ArrowRight className="size-3.5" />
                   </Link>
                 </Button>
@@ -172,13 +173,12 @@ export default function TemplatesPage() {
 
       <section className="border-t border-border bg-card/40">
         <div className="mx-auto max-w-3xl px-5 py-20 text-center lg:px-8">
-          <h2 className="text-[28px] font-semibold tracking-[-0.025em]">Or start from a blank page</h2>
+          <h2 className="text-[28px] font-semibold tracking-[-0.025em]">{t.blankTitle}</h2>
           <p className="mt-4 text-[15.5px] text-muted-foreground text-pretty">
-            Templates are a starting point, never a cage. Every section can be moved, edited, restyled or removed — and
-            you can add any of the 40+ sections to any page.
+            {t.blankBody}
           </p>
           <Button size="xl" className="mt-8" asChild>
-            <Link href="/sign-up">Start building</Link>
+            <Link href="/sign-up">{t.blankCta}</Link>
           </Button>
         </div>
       </section>

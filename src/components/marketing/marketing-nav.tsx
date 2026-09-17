@@ -5,17 +5,12 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
+import { LanguageToggle } from "@/components/marketing/language-toggle";
+import type { Lang } from "@/lib/i18n";
+import type { MarketingCopy } from "@/lib/i18n/marketing";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
-  { href: "/#website-builder", label: "Website builder" },
-  { href: "/#business", label: "Business tools" },
-  { href: "/templates", label: "Templates" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/#faq", label: "FAQ" },
-];
-
-export function MarketingNav() {
+export function MarketingNav({ lang, t }: { lang: Lang; t: MarketingCopy["nav"] }) {
   const [scrolled, setScrolled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
 
@@ -39,7 +34,7 @@ export function MarketingNav() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-          {LINKS.map((link) => (
+          {t.links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -51,29 +46,33 @@ export function MarketingNav() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <LanguageToggle current={lang} />
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/sign-in">Sign in</Link>
+            <Link href="/sign-in">{t.signIn}</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/sign-up">Start free</Link>
+            <Link href="/sign-up">{t.startFree}</Link>
           </Button>
         </div>
 
-        <button
+        <div className="flex items-center gap-2 lg:hidden">
+          <LanguageToggle current={lang} />
+          <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           className="flex size-9 items-center justify-center rounded-lg border border-border bg-card lg:hidden"
-          aria-label={open ? "Close menu" : "Open menu"}
+          aria-label={open ? t.closeMenu : t.openMenu}
           aria-expanded={open}
         >
           {open ? <X className="size-4" /> : <Menu className="size-4" />}
-        </button>
+          </button>
+        </div>
       </div>
 
       {open && (
         <div className="border-t border-border bg-background px-5 pb-5 pt-3 lg:hidden animate-slide-down">
           <nav className="flex flex-col gap-0.5" aria-label="Mobile">
-            {LINKS.map((link) => (
+            {t.links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -86,10 +85,10 @@ export function MarketingNav() {
           </nav>
           <div className="mt-4 flex flex-col gap-2">
             <Button variant="outline" asChild>
-              <Link href="/sign-in">Sign in</Link>
+              <Link href="/sign-in">{t.signIn}</Link>
             </Button>
             <Button asChild>
-              <Link href="/sign-up">Start free</Link>
+              <Link href="/sign-up">{t.startFree}</Link>
             </Button>
           </div>
         </div>
