@@ -43,8 +43,25 @@ Helabiz කියන්නේ ශ්‍රී ලාංකික කුඩා �
 ඉක්මනින්ම 🇱🇰
 ```
 
-**Profile picture:** use the jade logo mark from `images/01-teaser.png` (top-left), or the app icon.
-**Cover photo:** `images/07-fb-cover.png` (1640×624).
+### Logo files — `logo/`
+
+Regenerate with `powershell -ExecutionPolicy Bypass -File marketing\social\generate-logo.ps1`.
+
+| Use it for | File |
+| --- | --- |
+| **Profile picture** (FB + IG) | `logo/profile-jade-1024.png` |
+| Profile picture, dark variant | `logo/profile-dark-1024.png` |
+| Profile picture, light variant | `logo/profile-light-1024.png` |
+| Cover photo | `images/07-fb-cover.png` (1640×624) |
+| Header / letterhead on dark | `logo/lockup-dark.png` |
+| Header / letterhead on light | `logo/lockup-light.png` |
+| Watermark over a photo | `logo/mark-white-transparent-1024.png` |
+| Anything needing a cutout | `logo/*-transparent*.png` |
+
+The profile pictures are the **mark alone, with no wordmark**. Facebook and Instagram crop avatars
+to a circle and show them at roughly 40px in the feed — a lockup with "Helabiz" written next to it
+is unreadable at that size, and the wordmark is already right beside the avatar in every post.
+Use the lockups for covers, headers and printed material instead.
 
 ---
 
