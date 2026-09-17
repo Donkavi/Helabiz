@@ -6,17 +6,23 @@ import { ChevronDown, Search, X } from "lucide-react";
 import type { SiteContext } from "@/lib/website/render-types";
 import type { CatalogueFilters } from "./commerce";
 
-/** Reads catalogue filters from the URL. Inert in the builder, which has none. */
-export function useCatalogueFilters(ctx: SiteContext): CatalogueFilters {
+/**
+ * Reads catalogue filters from the URL.
+ *
+ * Only call this from a component that renders on the public site — the
+ * builder and the template previews have no URL to read, and this hook opts
+ * its route out of static rendering.
+ */
+export function useCatalogueFilters(): CatalogueFilters {
   const params = useSearchParams();
-  return React.useMemo(() => {
-    if (ctx.editor || !params) return {};
-    return {
-      category: params.get("category") ?? undefined,
-      q: params.get("q") ?? undefined,
-      sort: params.get("sort") ?? undefined,
-    };
-  }, [params, ctx.editor]);
+  return React.useMemo(
+    () => ({
+      category: params?.get("category") ?? undefined,
+      q: params?.get("q") ?? undefined,
+      sort: params?.get("sort") ?? undefined,
+    }),
+    [params],
+  );
 }
 
 const SORT_OPTIONS = [

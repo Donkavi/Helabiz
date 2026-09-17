@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Check, Globe, Loader2, Package, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Check, Eye, Globe, Loader2, Package, Sparkles, Wand2 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,13 +60,15 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
           const active = selected === template.id;
           const blank = template.id === "blank";
           return (
+            // The preview link is an anchor, so it sits beside the select button
+            // rather than inside it -- an <a> nested in a <button> is invalid.
+            <div key={template.id} className="relative">
             <button
-              key={template.id}
               type="button"
               onClick={() => setSelected(template.id)}
               aria-pressed={active}
               className={cn(
-                "group overflow-hidden rounded-xl border bg-card text-left transition-all duration-200",
+                "group w-full overflow-hidden rounded-xl border bg-card text-left transition-all duration-200",
                 active ? "border-primary shadow-md ring-2 ring-primary/15" : "border-border hover:border-primary/30 hover:shadow-sm",
               )}
             >
@@ -98,6 +101,20 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
                 </Badge>
               </div>
             </button>
+
+            {!blank && (
+              <Link
+                href={`/templates/${template.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Preview the ${template.name} template`}
+                className="absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-lg bg-background/90 px-2.5 py-1.5 text-[12px] font-semibold shadow-sm ring-1 ring-border backdrop-blur transition-colors hover:bg-background hover:text-primary"
+              >
+                <Eye className="size-3.5" />
+                Preview
+              </Link>
+            )}
+            </div>
           );
         })}
       </div>

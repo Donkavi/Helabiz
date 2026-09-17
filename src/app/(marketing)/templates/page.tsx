@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TEMPLATES } from "@/lib/website/templates";
@@ -42,8 +42,10 @@ export default function TemplatesPage() {
         <div className="grid gap-8 sm:grid-cols-2">
           {TEMPLATES.map((template) => (
             <article key={template.id} id={template.id} className="group scroll-mt-24">
-              <div
-                className="relative aspect-16/11 overflow-hidden rounded-2xl border border-border"
+              <Link
+                href={`/templates/${template.id}`}
+                aria-label={`View the ${template.name} template`}
+                className="group/tile relative block aspect-16/11 overflow-hidden rounded-2xl border border-border transition-all duration-200 hover:border-primary/40 hover:shadow-md"
                 style={{ background: template.theme.background }}
               >
                 {/* A miniature of the template's own theme tokens. */}
@@ -99,7 +101,14 @@ export default function TemplatesPage() {
                     />
                   ))}
                 </div>
-              </div>
+
+                <span className="absolute inset-0 flex items-center justify-center bg-foreground/35 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover/tile:opacity-100">
+                  <span className="inline-flex items-center gap-2 rounded-lg bg-background px-4 py-2.5 text-[13.5px] font-semibold shadow-lg">
+                    <Eye className="size-4 text-primary" />
+                    View template
+                  </span>
+                </span>
+              </Link>
 
               <div className="mt-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -120,12 +129,20 @@ export default function TemplatesPage() {
                 ))}
               </div>
 
-              <Button variant="outline" size="sm" className="mt-5" asChild>
-                <Link href={`/sign-up?template=${template.id}`}>
-                  Use this template
-                  <ArrowRight className="size-3.5" />
-                </Link>
-              </Button>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button size="sm" asChild>
+                  <Link href={`/templates/${template.id}`}>
+                    <Eye className="size-3.5" />
+                    View template
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/sign-up?template=${template.id}`}>
+                    Use this template
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                </Button>
+              </div>
             </article>
           ))}
         </div>

@@ -191,9 +191,26 @@ export function ProductCard({
 }
 
 /* ── Product grid ─────────────────────────────────────────────────────── */
+
+const NO_FILTERS: CatalogueFilters = {};
+
+/**
+ * The editor and the template previews have no URL to filter by, and
+ * useSearchParams() opts a route out of static rendering entirely. So the
+ * URL-reading variant is only ever mounted on the public site.
+ */
 export function ProductGridSection({ node, ctx }: P) {
+  if (ctx.editor) return <ProductGrid node={node} ctx={ctx} filters={NO_FILTERS} />;
+  return <FilteredProductGrid node={node} ctx={ctx} />;
+}
+
+function FilteredProductGrid({ node, ctx }: P) {
+  const filters = useCatalogueFilters();
+  return <ProductGrid node={node} ctx={ctx} filters={filters} />;
+}
+
+function ProductGrid({ node, ctx, filters }: P & { filters: CatalogueFilters }) {
   const p = node.props;
-  const filters = useCatalogueFilters(ctx);
   const products = selectProducts(p, ctx.products, filters, ctx.categories);
   const filtering = Boolean(filters.category || filters.q || filters.sort);
   const activeCategory = ctx.categories.find((c) => c.slug === filters.category);
