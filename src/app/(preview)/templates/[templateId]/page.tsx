@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TEMPLATES } from "@/lib/website/templates";
-import { demoSiteContext } from "@/lib/website/demo-data";
+import { decorateForPreview, demoSiteContext } from "@/lib/website/demo-data";
 import { TemplatePreview, type PreviewPage } from "./template-preview";
 
 /** Templates are defined in code, so every preview can be prerendered. */
@@ -38,7 +38,7 @@ export default async function TemplatePreviewPage({
     title: page.title,
     slug: page.slug,
     isHome: Boolean(page.isHome),
-    sections: page.sections,
+    sections: decorateForPreview(page.sections, template.category),
   }));
 
   return (
@@ -48,8 +48,8 @@ export default async function TemplatePreviewPage({
       category={template.category}
       description={template.description}
       pages={pages}
-      header={template.header}
-      footer={template.footer}
+      header={decorateForPreview(template.header, template.category)}
+      footer={decorateForPreview(template.footer, template.category)}
       ctx={demoSiteContext(template)}
     />
   );

@@ -167,12 +167,14 @@ export function TemplatePreview({
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-border bg-background/90 px-4 py-3 backdrop-blur-xl">
+      {/* z-40 matches the header: without it, any positioned section inside the
+          rendered template paints straight over this bar. */}
+      <div className="sticky bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
-          <p className="text-[13px] text-muted-foreground">
-            Sample products shown. Your own catalogue appears here once you add products.
+          <p className="min-w-0 flex-1 text-[13px] text-muted-foreground">
+            Sample products and pictures. Your own catalogue appears here once you add products.
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link href="/templates">All templates</Link>
             </Button>

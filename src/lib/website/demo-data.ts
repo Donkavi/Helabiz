@@ -1,3 +1,4 @@
+import type { SectionNode } from "@/types";
 import type { SiteContext, PublicCategory, PublicProduct, SiteBusiness } from "./render-types";
 import type { Template } from "./templates";
 import { normalizeTheme } from "./themes";
@@ -15,22 +16,28 @@ type DemoSet = {
   tagline: string;
   city: string;
   categories: string[];
-  products: { name: string; price: number; was?: number; image: string; blurb: string }[];
+  products: { name: string; price: number; was?: number; blurb: string }[];
 };
 
-const IMAGES = {
-  fashion1: "/placeholders/fashion-1.svg",
-  fashion2: "/placeholders/fashion-2.svg",
-  food1: "/placeholders/food-1.svg",
-  food2: "/placeholders/food-2.svg",
-  bakery1: "/placeholders/bakery-1.svg",
-  beauty1: "/placeholders/beauty-1.svg",
-  tech1: "/placeholders/tech-1.svg",
-  photo1: "/placeholders/photo-1.svg",
-  photo2: "/placeholders/photo-2.svg",
-  photo3: "/placeholders/photo-3.svg",
-  service1: "/placeholders/service-1.svg",
+const P = (name: string) => `/placeholders/${name}.svg`;
+
+/**
+ * On-theme artwork per family. Previews cycle through a pool rather than
+ * repeating one picture, so a six-up gallery never shows the same image twice.
+ */
+const POOLS: Record<string, string[]> = {
+  Fashion: ["fashion-1", "fashion-2", "fashion-3", "fashion-4"].map(P),
+  Bakery: ["bakery-1", "bakery-2", "bakery-3", "bakery-4"].map(P),
+  Restaurant: ["food-1", "food-2", "food-3", "food-4"].map(P),
+  Beauty: ["beauty-1", "beauty-2", "beauty-3", "beauty-4"].map(P),
+  Electronics: ["tech-1", "tech-2", "tech-3", "tech-4"].map(P),
+  Photography: ["photo-1", "photo-2", "photo-3", "photo-4"].map(P),
+  Services: ["service-1", "service-2", "service-3", "service-4"].map(P),
+  "Home Business": ["home-1", "home-2", "home-3", "home-4"].map(P),
 };
+
+/** Kept out of the product pool — a face where a product belongs reads as a bug. */
+const PEOPLE = ["person-1", "person-2", "person-3"].map(P);
 
 /** Keyed by template category, so each preview shows plausible stock. */
 const SETS: Record<string, DemoSet> = {
@@ -40,14 +47,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Colombo 04",
     categories: ["Dresses", "Tops", "Accessories"],
     products: [
-      { name: "Linen Wrap Dress", price: 8900, image: IMAGES.fashion2, blurb: "Breathable linen for Colombo heat" },
-      { name: "Oversized Cotton Tee", price: 4500, was: 6000, image: IMAGES.fashion1, blurb: "Heavyweight cotton, relaxed fit" },
-      { name: "Batik Midi Dress", price: 11500, image: IMAGES.photo3, blurb: "Hand-blocked batik, made in Kandy" },
-      { name: "Canvas Tote Bag", price: 2200, image: IMAGES.photo2, blurb: "Sturdy canvas with an inner pocket" },
-      { name: "Ribbed Knit Top", price: 3800, image: IMAGES.photo1, blurb: "Soft stretch rib, everyday fit" },
-      { name: "Wide Leg Trousers", price: 7200, image: IMAGES.fashion1, blurb: "High waist, flowing silhouette" },
-      { name: "Silk Scarf", price: 3400, image: IMAGES.beauty1, blurb: "Lightweight silk, hand-rolled edges" },
-      { name: "Cotton Shirt Dress", price: 9600, was: 11000, image: IMAGES.photo1, blurb: "Crisp poplin with a tie belt" },
+      { name: "Linen Wrap Dress", price: 8900, blurb: "Breathable linen for Colombo heat" },
+      { name: "Oversized Cotton Tee", price: 4500, was: 6000, blurb: "Heavyweight cotton, relaxed fit" },
+      { name: "Batik Midi Dress", price: 11500, blurb: "Hand-blocked batik, made in Kandy" },
+      { name: "Canvas Tote Bag", price: 2200, blurb: "Sturdy canvas with an inner pocket" },
+      { name: "Ribbed Knit Top", price: 3800, blurb: "Soft stretch rib, everyday fit" },
+      { name: "Wide Leg Trousers", price: 7200, blurb: "High waist, flowing silhouette" },
+      { name: "Silk Scarf", price: 3400, blurb: "Lightweight silk, hand-rolled edges" },
+      { name: "Cotton Shirt Dress", price: 9600, was: 11000, blurb: "Crisp poplin with a tie belt" },
     ],
   },
   Bakery: {
@@ -56,14 +63,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Kandy",
     categories: ["Cakes", "Short eats", "Bread"],
     products: [
-      { name: "Butter Cake", price: 1800, image: IMAGES.bakery1, blurb: "Real butter, baked this morning" },
-      { name: "Chocolate Gateau", price: 4500, image: IMAGES.food1, blurb: "Rich and fudgy, serves eight" },
-      { name: "Fish Bun (6 pack)", price: 900, image: IMAGES.food2, blurb: "Still warm when it reaches you" },
-      { name: "Seeni Sambol Bun", price: 150, image: IMAGES.bakery1, blurb: "Sweet, spicy, made daily" },
-      { name: "Milk Toffee Box", price: 1200, image: IMAGES.food1, blurb: "Traditional recipe, 20 pieces" },
-      { name: "Birthday Cake", price: 6500, image: IMAGES.food2, blurb: "Made to order for your day" },
-      { name: "Sourdough Loaf", price: 950, image: IMAGES.bakery1, blurb: "Slow fermented over two days" },
-      { name: "Party Box", price: 2800, image: IMAGES.food1, blurb: "Short eats for twelve people" },
+      { name: "Butter Cake", price: 1800, blurb: "Real butter, baked this morning" },
+      { name: "Chocolate Gateau", price: 4500, blurb: "Rich and fudgy, serves eight" },
+      { name: "Fish Bun (6 pack)", price: 900, blurb: "Still warm when it reaches you" },
+      { name: "Seeni Sambol Bun", price: 150, blurb: "Sweet, spicy, made daily" },
+      { name: "Milk Toffee Box", price: 1200, blurb: "Traditional recipe, 20 pieces" },
+      { name: "Birthday Cake", price: 6500, blurb: "Made to order for your day" },
+      { name: "Sourdough Loaf", price: 950, blurb: "Slow fermented over two days" },
+      { name: "Party Box", price: 2800, blurb: "Short eats for twelve people" },
     ],
   },
   Restaurant: {
@@ -72,14 +79,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Colombo 07",
     categories: ["Rice & curry", "Kottu", "Drinks"],
     products: [
-      { name: "Rice and Curry", price: 750, image: IMAGES.food1, blurb: "Five curries, papadam and sambol" },
-      { name: "Chicken Kottu", price: 950, image: IMAGES.food2, blurb: "Cooked to order on the griddle" },
-      { name: "Devilled Prawns", price: 1650, image: IMAGES.food1, blurb: "Hot, sweet and properly spicy" },
-      { name: "String Hoppers (10)", price: 450, image: IMAGES.food2, blurb: "With kiri hodi and pol sambol" },
-      { name: "Lamprais", price: 1250, image: IMAGES.food1, blurb: "Wrapped and baked in banana leaf" },
-      { name: "Watalappan", price: 400, image: IMAGES.food2, blurb: "Jaggery, coconut milk, cardamom" },
-      { name: "Faluda", price: 550, image: IMAGES.beauty1, blurb: "Rose syrup, basil seed, ice cream" },
-      { name: "Plain Tea", price: 120, image: IMAGES.food1, blurb: "Ceylon black, properly brewed" },
+      { name: "Rice and Curry", price: 750, blurb: "Five curries, papadam and sambol" },
+      { name: "Chicken Kottu", price: 950, blurb: "Cooked to order on the griddle" },
+      { name: "Devilled Prawns", price: 1650, blurb: "Hot, sweet and properly spicy" },
+      { name: "String Hoppers (10)", price: 450, blurb: "With kiri hodi and pol sambol" },
+      { name: "Lamprais", price: 1250, blurb: "Wrapped and baked in banana leaf" },
+      { name: "Watalappan", price: 400, blurb: "Jaggery, coconut milk, cardamom" },
+      { name: "Faluda", price: 550, blurb: "Rose syrup, basil seed, ice cream" },
+      { name: "Plain Tea", price: 120, blurb: "Ceylon black, properly brewed" },
     ],
   },
   Beauty: {
@@ -88,14 +95,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Colombo 05",
     categories: ["Hair", "Skin", "Nails"],
     products: [
-      { name: "Signature Facial", price: 6500, image: IMAGES.beauty1, blurb: "75 minutes, tailored to your skin" },
-      { name: "Hair Colour", price: 8500, image: IMAGES.photo2, blurb: "Ammonia free, consultation included" },
-      { name: "Bridal Package", price: 35000, image: IMAGES.beauty1, blurb: "Trial, day-of hair and makeup" },
-      { name: "Gel Manicure", price: 3200, image: IMAGES.photo3, blurb: "Lasts three weeks, chip free" },
-      { name: "Hydrating Serum", price: 4800, was: 5600, image: IMAGES.beauty1, blurb: "For dry and dull skin" },
-      { name: "Scalp Treatment", price: 4200, image: IMAGES.photo2, blurb: "For flaking and irritation" },
-      { name: "Threading", price: 800, image: IMAGES.beauty1, blurb: "Brows shaped in ten minutes" },
-      { name: "Gift Voucher", price: 5000, image: IMAGES.photo3, blurb: "Let them choose their own" },
+      { name: "Signature Facial", price: 6500, blurb: "75 minutes, tailored to your skin" },
+      { name: "Hair Colour", price: 8500, blurb: "Ammonia free, consultation included" },
+      { name: "Bridal Package", price: 35000, blurb: "Trial, day-of hair and makeup" },
+      { name: "Gel Manicure", price: 3200, blurb: "Lasts three weeks, chip free" },
+      { name: "Hydrating Serum", price: 4800, was: 5600, blurb: "For dry and dull skin" },
+      { name: "Scalp Treatment", price: 4200, blurb: "For flaking and irritation" },
+      { name: "Threading", price: 800, blurb: "Brows shaped in ten minutes" },
+      { name: "Gift Voucher", price: 5000, blurb: "Let them choose their own" },
     ],
   },
   Electronics: {
@@ -104,14 +111,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Negombo",
     categories: ["Laptops", "Phones", "Accessories"],
     products: [
-      { name: "Wireless Earbuds", price: 12500, was: 15900, image: IMAGES.tech1, blurb: "Noise cancelling, 28h battery" },
-      { name: "USB-C Charger 65W", price: 6800, image: IMAGES.tech1, blurb: "Charges a laptop and a phone" },
-      { name: "Mechanical Keyboard", price: 18500, image: IMAGES.tech1, blurb: "Hot-swap switches, backlit" },
-      { name: "Power Bank 20000mAh", price: 9200, image: IMAGES.tech1, blurb: "Two devices at once" },
-      { name: "1080p Webcam", price: 8900, image: IMAGES.tech1, blurb: "Autofocus with a built-in mic" },
-      { name: "Laptop Sleeve 14\"", price: 3400, image: IMAGES.photo2, blurb: "Padded, water resistant" },
-      { name: "Bluetooth Speaker", price: 14500, image: IMAGES.tech1, blurb: "IPX7, twelve hours of play" },
-      { name: "SSD 1TB", price: 27500, image: IMAGES.tech1, blurb: "Read speeds up to 3500MB/s" },
+      { name: "Wireless Earbuds", price: 12500, was: 15900, blurb: "Noise cancelling, 28h battery" },
+      { name: "USB-C Charger 65W", price: 6800, blurb: "Charges a laptop and a phone" },
+      { name: "Mechanical Keyboard", price: 18500, blurb: "Hot-swap switches, backlit" },
+      { name: "Power Bank 20000mAh", price: 9200, blurb: "Two devices at once" },
+      { name: "1080p Webcam", price: 8900, blurb: "Autofocus with a built-in mic" },
+      { name: "Laptop Sleeve 14\"", price: 3400, blurb: "Padded, water resistant" },
+      { name: "Bluetooth Speaker", price: 14500, blurb: "IPX7, twelve hours of play" },
+      { name: "SSD 1TB", price: 27500, blurb: "Read speeds up to 3500MB/s" },
     ],
   },
   Photography: {
@@ -120,14 +127,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Colombo",
     categories: ["Weddings", "Portraits", "Prints"],
     products: [
-      { name: "Portrait Session", price: 18000, image: IMAGES.photo1, blurb: "One hour, 20 edited photographs" },
-      { name: "Wedding — Full Day", price: 165000, image: IMAGES.photo2, blurb: "Two photographers, album included" },
-      { name: "Engagement Shoot", price: 32000, image: IMAGES.photo3, blurb: "Two locations, 40 photographs" },
-      { name: "Product Photography", price: 24000, image: IMAGES.photo1, blurb: "Ten products, white background" },
-      { name: "Fine Art Print A3", price: 6500, image: IMAGES.photo2, blurb: "Archival paper, signed" },
-      { name: "Photo Album", price: 28000, image: IMAGES.photo3, blurb: "Lay-flat, 40 pages" },
-      { name: "Event Coverage", price: 45000, image: IMAGES.photo1, blurb: "Four hours, same-week delivery" },
-      { name: "Digital Gallery", price: 8000, image: IMAGES.photo2, blurb: "Private online gallery for a year" },
+      { name: "Portrait Session", price: 18000, blurb: "One hour, 20 edited photographs" },
+      { name: "Wedding — Full Day", price: 165000, blurb: "Two photographers, album included" },
+      { name: "Engagement Shoot", price: 32000, blurb: "Two locations, 40 photographs" },
+      { name: "Product Photography", price: 24000, blurb: "Ten products, white background" },
+      { name: "Fine Art Print A3", price: 6500, blurb: "Archival paper, signed" },
+      { name: "Photo Album", price: 28000, blurb: "Lay-flat, 40 pages" },
+      { name: "Event Coverage", price: 45000, blurb: "Four hours, same-week delivery" },
+      { name: "Digital Gallery", price: 8000, blurb: "Private online gallery for a year" },
     ],
   },
   Services: {
@@ -136,14 +143,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Gampaha",
     categories: ["Installation", "Repairs", "Maintenance"],
     products: [
-      { name: "Site Visit & Quote", price: 2500, image: IMAGES.service1, blurb: "Written quote within 24 hours" },
-      { name: "AC Installation", price: 18500, image: IMAGES.service1, blurb: "Including brackets and piping" },
-      { name: "Annual Service Plan", price: 24000, image: IMAGES.service1, blurb: "Four visits across the year" },
-      { name: "Emergency Callout", price: 6500, image: IMAGES.service1, blurb: "Same day where we can" },
-      { name: "Electrical Rewiring", price: 55000, image: IMAGES.photo2, blurb: "Certified, per average home" },
-      { name: "Plumbing Repair", price: 4500, image: IMAGES.service1, blurb: "Charged per hour on site" },
-      { name: "Deep Clean", price: 12500, image: IMAGES.photo3, blurb: "Full property, team of three" },
-      { name: "Maintenance Retainer", price: 35000, image: IMAGES.service1, blurb: "Priority booking, monthly" },
+      { name: "Site Visit & Quote", price: 2500, blurb: "Written quote within 24 hours" },
+      { name: "AC Installation", price: 18500, blurb: "Including brackets and piping" },
+      { name: "Annual Service Plan", price: 24000, blurb: "Four visits across the year" },
+      { name: "Emergency Callout", price: 6500, blurb: "Same day where we can" },
+      { name: "Electrical Rewiring", price: 55000, blurb: "Certified, per average home" },
+      { name: "Plumbing Repair", price: 4500, blurb: "Charged per hour on site" },
+      { name: "Deep Clean", price: 12500, blurb: "Full property, team of three" },
+      { name: "Maintenance Retainer", price: 35000, blurb: "Priority booking, monthly" },
     ],
   },
   "Home Business": {
@@ -152,14 +159,14 @@ const SETS: Record<string, DemoSet> = {
     city: "Gampaha",
     categories: ["Candles", "Soap", "Gifts"],
     products: [
-      { name: "Soy Candle", price: 2400, image: IMAGES.service1, blurb: "Forty hours of burn time" },
-      { name: "Coconut Soap", price: 650, image: IMAGES.photo3, blurb: "Cold pressed, no palm oil" },
-      { name: "Gift Hamper", price: 6800, image: IMAGES.photo2, blurb: "Wrapped and ready to give" },
-      { name: "Reed Diffuser", price: 3200, image: IMAGES.service1, blurb: "Lasts about three months" },
-      { name: "Lip Balm", price: 450, image: IMAGES.beauty1, blurb: "Beeswax and shea butter" },
-      { name: "Wax Melts", price: 1200, image: IMAGES.service1, blurb: "Six cubes, two scents" },
-      { name: "Body Scrub", price: 1900, image: IMAGES.photo3, blurb: "Coffee and coconut oil" },
-      { name: "Starter Set", price: 4500, was: 5400, image: IMAGES.photo2, blurb: "Candle, soap and balm" },
+      { name: "Soy Candle", price: 2400, blurb: "Forty hours of burn time" },
+      { name: "Coconut Soap", price: 650, blurb: "Cold pressed, no palm oil" },
+      { name: "Gift Hamper", price: 6800, blurb: "Wrapped and ready to give" },
+      { name: "Reed Diffuser", price: 3200, blurb: "Lasts about three months" },
+      { name: "Lip Balm", price: 450, blurb: "Beeswax and shea butter" },
+      { name: "Wax Melts", price: 1200, blurb: "Six cubes, two scents" },
+      { name: "Body Scrub", price: 1900, blurb: "Coffee and coconut oil" },
+      { name: "Starter Set", price: 4500, was: 5400, blurb: "Candle, soap and balm" },
     ],
   },
 };
@@ -172,14 +179,20 @@ function demoId(prefix: string, index: number) {
   return `${prefix}${String(index).padStart(24 - prefix.length, "0")}`;
 }
 
+/** The artwork pool for a template category, falling back to the fashion set. */
+function poolFor(category: string) {
+  return POOLS[category] ?? POOLS.Fashion;
+}
+
 export function demoCatalogue(category: string) {
   const set = SETS[category] ?? FALLBACK;
+  const pool = poolFor(category);
 
   const categories: PublicCategory[] = set.categories.map((name, index) => ({
     id: demoId("cat", index + 1),
     name,
     slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    image: set.products[index]?.image,
+    image: pool[index % pool.length],
   }));
 
   const products: PublicProduct[] = set.products.map((product, index) => ({
@@ -188,7 +201,7 @@ export function demoCatalogue(category: string) {
     slug: product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     price: product.price,
     compareAtPrice: product.was,
-    images: [product.image],
+    images: [pool[index % pool.length]],
     stock: 12 + index,
     trackInventory: true,
     categoryId: categories[index % categories.length]?.id,
@@ -248,4 +261,88 @@ export function demoSiteContext(template: Template): SiteContext {
     editor: true,
     viewport: "desktop",
   };
+}
+
+/** The family whose backdrops suit a template category. */
+const SCENE_FAMILY: Record<string, string> = {
+  Fashion: "fashion",
+  Bakery: "bakery",
+  Restaurant: "food",
+  Beauty: "beauty",
+  Electronics: "tech",
+  Photography: "photo",
+  Services: "service",
+  "Home Business": "home",
+};
+
+function scenesFor(category: string) {
+  const family = SCENE_FAMILY[category] ?? "fashion";
+  return [`/placeholders/scene-${family}-1.svg`, `/placeholders/scene-${family}-2.svg`];
+}
+
+const isPlaceholder = (value: unknown): value is string =>
+  typeof value === "string" && value.startsWith("/placeholders/");
+
+/**
+ * Re-points a template's own artwork at the preview's category.
+ *
+ * Templates ship with neutral placeholders, which is right for someone who is
+ * about to replace them with their own photographs. A preview is doing the
+ * opposite job — it has to look like a finished bakery — so every
+ * `/placeholders/…` reference is swapped for the next picture in that
+ * category's pool. Nothing here touches the stored template, so a business
+ * that uses it still starts from the neutral artwork.
+ *
+ * Full-bleed slots get a patterned backdrop rather than a picture: a hero
+ * background and a slider slide crop hard and sit under white text, where a
+ * single centred subject blown up to fill the frame looks like a mistake.
+ */
+export function decorateForPreview<T extends SectionNode | SectionNode[] | null>(input: T, category: string): T {
+  const photos = poolFor(category);
+  const scenes = scenesFor(category);
+  let photoAt = 0;
+  let sceneAt = 0;
+  let personAt = 0;
+  const photo = () => photos[photoAt++ % photos.length];
+  const backdrop = () => scenes[sceneAt++ % scenes.length];
+  const person = () => PEOPLE[personAt++ % PEOPLE.length];
+
+  const swapIn = (record: Record<string, unknown>, pick: () => string) =>
+    Object.fromEntries(
+      Object.entries(record).map(([key, value]) => [key, isPlaceholder(value) ? pick() : value]),
+    );
+
+  const walk = (node: SectionNode): SectionNode => {
+    // A hero laid out as a background, and every slide in a slider, are the
+    // full-bleed cases.
+    const heroBackdrop = node.type === "hero" && node.props.layout === "background";
+    const listPick = node.type === "slider" ? backdrop : node.type === "team" ? person : photo;
+
+    const props: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(node.props)) {
+      if (isPlaceholder(value)) props[key] = heroBackdrop ? backdrop() : photo();
+      else if (Array.isArray(value)) {
+        props[key] = value.map((item) =>
+          item && typeof item === "object" && !Array.isArray(item)
+            ? swapIn(item as Record<string, unknown>, listPick)
+            : isPlaceholder(item)
+              ? listPick()
+              : item,
+        );
+      } else props[key] = value;
+    }
+
+    return {
+      ...node,
+      props,
+      styles: isPlaceholder(node.styles.backgroundImage)
+        ? { ...node.styles, backgroundImage: backdrop() }
+        : node.styles,
+      children: node.children?.map(walk),
+    };
+  };
+
+  if (input === null) return input;
+  if (Array.isArray(input)) return input.map(walk) as T;
+  return walk(input) as T;
 }
