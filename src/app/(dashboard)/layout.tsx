@@ -7,9 +7,12 @@ import { getPlan } from "@/lib/plans";
 import { SidebarContent } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { siteUrlFor } from "@/lib/website/urls";
+import { getLang } from "@/lib/i18n/server";
+import { LangProvider } from "@/lib/i18n/provider";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, business, businessId } = await requireBusiness();
+  const lang = await getLang();
   await connectDB();
 
   const startOfMonth = new Date();
@@ -27,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const usage =
     plan.limits.ordersPerMonth === Number.POSITIVE_INFINITY
       ? undefined
-      : { label: "orders", used: ordersThisMonth, limit: plan.limits.ordersPerMonth };
+      : { used: ordersThisMonth, limit: plan.limits.ordersPerMonth };
 
   const options = businesses.map((b) => ({
     id: b._id,
@@ -41,7 +44,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const siteUrl = website?.status === "published" ? siteUrlFor(business.slug) : null;
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <LangProvider lang={lang}>
+    <div className="flex min-h-dvh bg-background" lang={lang}>
       <aside className="hidden w-[248px] shrink-0 border-r border-sidebar-border lg:block">
         <div className="sticky top-0 h-dvh">
           <SidebarContent
@@ -75,5 +79,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
       </div>
     </div>
+    </LangProvider>
   );
 }

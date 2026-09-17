@@ -27,11 +27,17 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { RevenueChart, ProfitChart } from "@/components/charts/revenue-chart";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
+import { getLang } from "@/lib/i18n/server";
+import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: dashboardCopy(await getLang()).home.metaTitle };
+}
 
 export default async function DashboardPage() {
   const { business, businessId } = await requireBusiness();
+  const c = dashboardCopy(await getLang());
+  const t = c.home;
   const data = await getDashboardData(businessId);
 
   const [website, productCount] = await Promise.all([
@@ -46,20 +52,20 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-7">
       <PageHeader
-        title={`Good day, ${business.name}`}
-        description="Here is how your business is doing today."
+        title={fill(t.greeting, { name: business.name })}
+        description={t.subtitle}
         actions={
           <>
             <Button variant="outline" asChild>
               <Link href="/products/new">
                 <Plus className="size-4" />
-                Add product
+                {t.addProduct}
               </Link>
             </Button>
             <Button asChild>
               <Link href="/orders/new">
                 <ShoppingCart className="size-4" />
-                New order
+                {t.newOrder}
               </Link>
             </Button>
           </>
@@ -78,40 +84,40 @@ export default async function DashboardPage() {
       {/* Today */}
       <section aria-labelledby="today-heading" className="space-y-3">
         <h2 id="today-heading" className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Today
+          {t.today}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Today's sales"
+            label={t.todaysSales}
             value={formatCurrency(data.today.revenue, { decimals: false })}
             change={percentChange(data.today.revenue, data.yesterday.revenue)}
-            sublabel="vs yesterday"
+            sublabel={t.vsYesterday}
             icon={TrendingUp}
             tone="primary"
             href="/reports"
           />
           <StatCard
-            label="Orders"
+            label={t.orders}
             value={formatNumber(data.today.orders)}
             change={percentChange(data.today.orders, data.yesterday.orders)}
-            sublabel="vs yesterday"
+            sublabel={t.vsYesterday}
             icon={ShoppingCart}
             href="/orders"
           />
           <StatCard
-            label="Expenses"
+            label={t.expenses}
             value={formatCurrency(data.today.expenses, { decimals: false })}
             change={percentChange(data.today.expenses, data.yesterday.expenses)}
-            sublabel="vs yesterday"
+            sublabel={t.vsYesterday}
             icon={Wallet}
             invertChange
             href="/expenses"
           />
           <StatCard
-            label="Profit"
+            label={t.profit}
             value={formatCurrency(data.today.profit, { decimals: false })}
             change={percentChange(data.today.profit, data.yesterday.profit)}
-            sublabel="after cost & expenses"
+            sublabel={t.afterCostAndExpenses}
             icon={BarChart3}
             href="/reports"
           />
@@ -122,20 +128,20 @@ export default async function DashboardPage() {
       <section aria-labelledby="website-heading" className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 id="website-heading" className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Website · last 30 days
+            {t.websiteLast30}
           </h2>
           <Link href="/website/analytics" className="text-[13px] font-medium text-primary hover:underline">
-            View analytics
+            {t.viewAnalytics}
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Visitors" value={formatNumber(data.web.visitors)} icon={Eye} sublabel={`${formatNumber(data.web.pageViews)} page views`} />
-          <StatCard label="Website orders" value={formatNumber(data.web.orders)} icon={Globe} tone="primary" href="/orders?source=website" />
-          <StatCard label="Conversion rate" value={`${data.web.conversionRate.toFixed(1)}%`} sublabel="visitors who ordered" icon={TrendingUp} />
+          <StatCard label={t.visitors} value={formatNumber(data.web.visitors)} icon={Eye} sublabel={fill(t.pageViews, { count: formatNumber(data.web.pageViews) })} />
+          <StatCard label={t.websiteOrders} value={formatNumber(data.web.orders)} icon={Globe} tone="primary" href="/orders?source=website" />
+          <StatCard label={t.conversionRate} value={`${data.web.conversionRate.toFixed(1)}%`} sublabel={t.visitorsWhoOrdered} icon={TrendingUp} />
           <StatCard
-            label="Low stock"
+            label={t.lowStock}
             value={formatNumber(lowStock.length)}
-            sublabel={lowStock.length ? "needs restocking" : "everything in stock"}
+            sublabel={lowStock.length ? t.itemsNeedRestocking : t.everythingInStock}
             icon={AlertTriangle}
             tone={lowStock.length ? "warning" : "default"}
             href="/inventory"
@@ -148,11 +154,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex-row items-center">
             <div>
-              <CardTitle>Sales</CardTitle>
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground">Last 30 days</p>
+              <CardTitle>{t.sales}</CardTitle>
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">{t.last30Days}</p>
             </div>
             <CardAction>
-              <Badge variant="soft">{formatCurrency(data.month.revenue, { compact: true, decimals: false })} this month</Badge>
+              <Badge variant="soft">{formatCurrency(data.month.revenue, { compact: true, decimals: false })} {t.thisMonth}</Badge>
             </CardAction>
           </CardHeader>
           <CardContent className="pt-1">
@@ -163,12 +169,12 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex-row items-center">
             <div>
-              <CardTitle>Profit & expenses</CardTitle>
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground">Last 30 days</p>
+              <CardTitle>{t.profitAndExpenses}</CardTitle>
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">{t.last30Days}</p>
             </div>
             <CardAction>
               <Badge variant={data.month.profit >= 0 ? "success" : "destructive"}>
-                {formatCurrency(data.month.profit, { compact: true, decimals: false })} profit
+                {formatCurrency(data.month.profit, { compact: true, decimals: false })} {t.profitSuffix}
               </Badge>
             </CardAction>
           </CardHeader>
@@ -182,11 +188,11 @@ export default async function DashboardPage() {
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
           <CardHeader className="flex-row items-center">
-            <CardTitle>Recent orders</CardTitle>
+            <CardTitle>{t.recentOrders}</CardTitle>
             <CardAction>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/orders">
-                  View all
+                  {c.common.viewAll}
                   <ArrowRight className="size-3.5" />
                 </Link>
               </Button>
@@ -197,11 +203,11 @@ export default async function DashboardPage() {
               <EmptyState
                 compact
                 icon={ShoppingCart}
-                title="No orders yet"
-                description="Orders from your website and the ones you add by hand both land here."
+                title={t.noOrdersTitle}
+                description={t.noOrdersBody}
                 action={
                   <Button size="sm" asChild>
-                    <Link href="/orders/new">Record an order</Link>
+                    <Link href="/orders/new">{t.recordAnOrder}</Link>
                   </Button>
                 }
               />
@@ -223,7 +229,7 @@ export default async function DashboardPage() {
                           )}
                         </p>
                         <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-                          {order.customer?.name || "Walk-in customer"} · {relativeTime(order.createdAt as unknown as string)}
+                          {order.customer?.name || t.walkInCustomer} · {relativeTime(order.createdAt as unknown as string)}
                         </p>
                       </div>
                       <OrderStatusBadge status={order.status} />
@@ -241,7 +247,7 @@ export default async function DashboardPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Top products</CardTitle>
+              <CardTitle>{t.topProducts}</CardTitle>
               <p className="mt-0.5 text-[12.5px] text-muted-foreground">Last 30 days by revenue</p>
             </CardHeader>
             <CardContent className="pt-0">
@@ -256,7 +262,7 @@ export default async function DashboardPage() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-medium">{product.name}</p>
-                        <p className="text-[12px] text-muted-foreground">{product.quantity} sold</p>
+                        <p className="text-[12px] text-muted-foreground">{product.quantity} {t.sold}</p>
                       </div>
                       <p className="shrink-0 text-[13.5px] font-semibold tabular-nums">
                         {formatCurrency(product.revenue, { decimals: false })}
@@ -270,7 +276,7 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader className="flex-row items-center">
-              <CardTitle>Low stock</CardTitle>
+              <CardTitle>{t.lowStock}</CardTitle>
               <CardAction>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/inventory">
@@ -282,7 +288,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="pt-0">
               {lowStock.length === 0 ? (
-                <p className="py-6 text-center text-[13px] text-muted-foreground">Everything is well stocked.</p>
+                <p className="py-6 text-center text-[13px] text-muted-foreground">{t.everythingWellStocked}</p>
               ) : (
                 <ul className="space-y-2.5">
                   {lowStock.map((product) => (
@@ -290,7 +296,7 @@ export default async function DashboardPage() {
                       <Package className="size-3.5 shrink-0 text-muted-foreground" />
                       <p className="min-w-0 flex-1 truncate text-[13.5px]">{product.name}</p>
                       <Badge variant={product.stock <= 0 ? "destructive" : "warning"}>
-                        {product.stock <= 0 ? "Out of stock" : `${product.stock} left`}
+                        {product.stock <= 0 ? t.outOfStock : fill(t.left, { count: product.stock })}
                       </Badge>
                     </li>
                   ))}

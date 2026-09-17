@@ -23,7 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ORDER_STATUS_OPTIONS } from "@/components/dashboard/order-status-badge";
+import { ORDER_STATUS_VALUES } from "@/components/dashboard/order-status-badge";
+import { useT } from "@/lib/i18n/provider";
 import type { OrderStatus, PaymentStatus } from "@/types";
 import { deleteOrderAction, updateOrderStatusAction, updatePaymentStatusAction } from "../actions";
 import { createInvoiceAction } from "../../invoices/actions";
@@ -44,6 +45,7 @@ export function OrderActions({
   invoiceId?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const [pending, startTransition] = React.useTransition();
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [previewOpen, setPreviewOpen] = React.useState(false);
@@ -83,9 +85,9 @@ export function OrderActions({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {ORDER_STATUS_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
+          {ORDER_STATUS_VALUES.map((value) => (
+            <SelectItem key={value} value={value}>
+              {t.enums.orderStatus[value]}
             </SelectItem>
           ))}
         </SelectContent>

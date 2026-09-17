@@ -17,38 +17,42 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type NavLink = { href: string; label: string; icon: LucideIcon; exact?: boolean };
-export type NavGroup = { label: string; items: NavLink[] };
+import type { DashboardCopy } from "@/lib/i18n/dashboard";
+
+/** `key` names the entry in `nav` of the dictionary; the label is looked up at render. */
+export type NavKey = keyof Omit<DashboardCopy["nav"], "groups" | "viewLiveSite" | "freePlan" | "usageThisMonth" | "upgradePlan">;
+export type NavLink = { href: string; key: NavKey; icon: LucideIcon; exact?: boolean };
+export type NavGroup = { group: "business" | "website"; items: NavLink[] };
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Business",
+    group: "business",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { href: "/orders", label: "Orders", icon: ShoppingCart },
-      { href: "/products", label: "Products", icon: Package },
-      { href: "/inventory", label: "Inventory", icon: Boxes },
-      { href: "/customers", label: "Customers", icon: Users },
-      { href: "/expenses", label: "Expenses", icon: Wallet },
-      { href: "/invoices", label: "Invoices", icon: FileText },
-      { href: "/reports", label: "Reports", icon: BarChart3 },
+      { href: "/dashboard", key: "dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/orders", key: "orders", icon: ShoppingCart },
+      { href: "/products", key: "products", icon: Package },
+      { href: "/inventory", key: "inventory", icon: Boxes },
+      { href: "/customers", key: "customers", icon: Users },
+      { href: "/expenses", key: "expenses", icon: Wallet },
+      { href: "/invoices", key: "invoices", icon: FileText },
+      { href: "/reports", key: "reports", icon: BarChart3 },
     ],
   },
   {
-    label: "Website",
+    group: "website",
     items: [
-      { href: "/website", label: "Overview", icon: Globe, exact: true },
-      { href: "/website/pages", label: "Pages", icon: PanelsTopLeft },
-      { href: "/website/themes", label: "Themes", icon: LayoutTemplate },
-      { href: "/website/navigation", label: "Navigation", icon: Link2 },
-      { href: "/website/analytics", label: "Analytics", icon: Sparkles },
-      { href: "/website/domains", label: "Domains", icon: AtSign },
-      { href: "/website/settings", label: "Settings", icon: Settings },
+      { href: "/website", key: "overview", icon: Globe, exact: true },
+      { href: "/website/pages", key: "pages", icon: PanelsTopLeft },
+      { href: "/website/themes", key: "themes", icon: LayoutTemplate },
+      { href: "/website/navigation", key: "navigation", icon: Link2 },
+      { href: "/website/analytics", key: "analytics", icon: Sparkles },
+      { href: "/website/domains", key: "domains", icon: AtSign },
+      { href: "/website/settings", key: "settings", icon: Settings },
     ],
   },
 ];
 
-export const ACCOUNT_LINKS: NavLink[] = [{ href: "/settings", label: "Settings", icon: Settings }];
+export const ACCOUNT_LINKS: NavLink[] = [{ href: "/settings", key: "settings", icon: Settings }];
 
 export function isActive(pathname: string, link: NavLink) {
   if (link.exact) return pathname === link.href;

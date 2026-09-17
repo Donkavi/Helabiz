@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/misc";
-import { OrderStatusBadge, PaymentStatusBadge, PAYMENT_METHOD_LABELS, SOURCE_LABELS } from "@/components/dashboard/order-status-badge";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/dashboard/order-status-badge";
+import { getLang } from "@/lib/i18n/server";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { buildOrderMessage, whatsappLink } from "@/lib/whatsapp";
 import { OrderActions } from "./order-actions";
@@ -26,6 +28,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   if (!order) notFound();
 
   const invoice = await Invoice.findOne({ businessId, orderId: id }).select("_id invoiceNumber").lean();
+  const t = dashboardCopy(await getLang());
   const plain = serialize(order);
 
   const message = buildOrderMessage(
@@ -63,7 +66,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <OrderStatusBadge status={plain.status ?? "pending"} />
               <PaymentStatusBadge status={plain.paymentStatus ?? "unpaid"} />
               <Badge variant={plain.source === "website" ? "soft" : "muted"}>
-                {SOURCE_LABELS[plain.source ?? "manual"]}
+                {t.enums.orderSource[plain.source ?? "manual"]}
               </Badge>
             </div>
             <p className="mt-1 text-[13px] text-muted-foreground">
@@ -220,7 +223,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <CardTitle>Payment</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5 pt-0 text-[13.5px]">
-              <SummaryRow label="Method" value={PAYMENT_METHOD_LABELS[plain.paymentMethod ?? "cod"]} />
+              <SummaryRow label="Method" value={t.enums.paymentMethod[plain.paymentMethod ?? "cod"]} />
               <SummaryRow label="Status" value={<PaymentStatusBadge status={plain.paymentStatus ?? "unpaid"} />} />
               {plain.trackingNumber && <SummaryRow label="Tracking" value={plain.trackingNumber} />}
             </CardContent>

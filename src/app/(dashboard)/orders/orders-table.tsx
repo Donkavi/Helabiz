@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
-import { OrderStatusBadge, PaymentStatusBadge, SOURCE_LABELS } from "@/components/dashboard/order-status-badge";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/dashboard/order-status-badge";
+import { useT } from "@/lib/i18n/provider";
 import { formatCurrency, relativeTime } from "@/lib/utils";
 
 export type OrderRow = {
@@ -46,6 +47,7 @@ export function OrdersTable({
   initialStatus: string;
   initialSource: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [query, setQuery] = React.useState(initialQuery);
   const [status, setStatus] = React.useState(initialStatus);
@@ -107,7 +109,7 @@ export function OrdersTable({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All sources</SelectItem>
-            {Object.entries(SOURCE_LABELS).map(([value, label]) => (
+            {Object.entries(t.enums.orderSource).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
               </SelectItem>
@@ -169,7 +171,7 @@ export function OrdersTable({
                   </TableCell>
                   <TableCell>
                     <Badge variant={order.source === "website" ? "soft" : "muted"}>
-                      {SOURCE_LABELS[order.source] ?? order.source}
+                      {t.enums.orderSource[order.source] ?? order.source}
                     </Badge>
                   </TableCell>
                   <TableCell>

@@ -1,6 +1,11 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Globe, Package, Rocket, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/provider";
+import { fill } from "@/lib/i18n/dashboard";
 import { cn } from "@/lib/utils";
 
 export function SetupChecklist({
@@ -14,12 +19,16 @@ export function SetupChecklist({
   isPublished: boolean;
   hasOrders: boolean;
 }) {
-  const steps = [
-    { done: hasProducts, icon: Package, title: "Add your products", body: "Name, price and a photo is enough to start.", href: "/products/new", cta: "Add product" },
-    { done: hasWebsite, icon: Globe, title: "Create your website", body: "Pick a template — your products load in automatically.", href: "/website", cta: "Create website" },
-    { done: isPublished, icon: Rocket, title: "Publish it", body: "Go live on your own helabiz.lk address.", href: "/website", cta: "Open builder" },
-    { done: hasOrders, icon: ShoppingCart, title: "Take your first order", body: "Website orders arrive here automatically.", href: "/orders/new", cta: "Record an order" },
-  ];
+  const t = useT();
+  const done = [hasProducts, hasWebsite, isPublished, hasOrders];
+  const icons = [Package, Globe, Rocket, ShoppingCart];
+  const hrefs = ["/products/new", "/website", "/website", "/orders/new"];
+  const steps = t.home.setup.map((step, i) => ({
+    ...step,
+    done: done[i],
+    icon: icons[i],
+    href: hrefs[i],
+  }));
 
   const completed = steps.filter((s) => s.done).length;
   if (completed === steps.length) return null;
@@ -32,9 +41,9 @@ export function SetupChecklist({
       <div className="relative">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-[16px] font-semibold">Get set up</h2>
+            <h2 className="text-[16px] font-semibold">{t.home.setupTitle}</h2>
             <p className="mt-1 text-[13.5px] text-muted-foreground">
-              {completed} of {steps.length} done — you are close.
+              {fill(t.home.setupProgress, { done: completed, total: steps.length })}
             </p>
           </div>
           {next && (
@@ -72,7 +81,7 @@ export function SetupChecklist({
                     step.done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                   )}
                 >
-                  {step.done ? <Check className="size-3.5 stroke-[3]" /> : <step.icon className="size-3.5" />}
+                  {step.done ? <Check className="size-3.5 stroke-[3]" /> : React.createElement(step.icon, { className: "size-3.5" })}
                 </span>
                 <span className="text-[13.5px] font-medium">{step.title}</span>
                 <span className="text-[12.5px] leading-relaxed text-muted-foreground">{step.body}</span>

@@ -15,7 +15,8 @@ import { Separator } from "@/components/ui/misc";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 import { SRI_LANKA_DISTRICTS } from "@/lib/sri-lanka";
-import { ORDER_STATUS_OPTIONS, PAYMENT_METHOD_LABELS, SOURCE_LABELS } from "@/components/dashboard/order-status-badge";
+import { ORDER_STATUS_VALUES } from "@/components/dashboard/order-status-badge";
+import { useT } from "@/lib/i18n/provider";
 import { createOrderAction } from "../actions";
 
 type CatalogueProduct = {
@@ -52,6 +53,7 @@ export function OrderComposer({
   customers: { id: string; name: string; phone: string; address?: string; city?: string; district?: string }[];
   defaultDeliveryFee: number;
 }) {
+  const t = useT();
   const router = useRouter();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [search, setSearch] = React.useState("");
@@ -491,7 +493,7 @@ export function OrderComposer({
                   label="Order status"
                   value={meta.status}
                   onChange={(v) => setMeta({ ...meta, status: v })}
-                  options={ORDER_STATUS_OPTIONS}
+                  options={ORDER_STATUS_VALUES.map((value) => ({ value, label: t.enums.orderStatus[value] }))}
                 />
                 <SelectField
                   label="Payment"
@@ -507,13 +509,13 @@ export function OrderComposer({
                   label="Payment method"
                   value={meta.paymentMethod}
                   onChange={(v) => setMeta({ ...meta, paymentMethod: v })}
-                  options={Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => ({ value, label }))}
+                  options={Object.entries(t.enums.paymentMethod).map(([value, label]) => ({ value, label }))}
                 />
                 <SelectField
                   label="Where did it come from?"
                   value={meta.source}
                   onChange={(v) => setMeta({ ...meta, source: v })}
-                  options={Object.entries(SOURCE_LABELS)
+                  options={Object.entries(t.enums.orderSource)
                     .filter(([value]) => value !== "website")
                     .map(([value, label]) => ({ value, label }))}
                 />
