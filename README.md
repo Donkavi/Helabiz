@@ -45,6 +45,8 @@ path. On a shared cluster, leave it as `helabiz` so nothing mixes with another a
 | `npm run build` / `npm start` | Production build and server |
 | `npm run seed` | Reset and recreate the demo business |
 | `npm run db:reset` | Delete the embedded development database |
+| `npm run placeholders` | Redraw the placeholder artwork in `public/placeholders` |
+| `npm run mascot` | Redraw the mascot sprite sheets in `public/mascots` |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 
@@ -59,6 +61,30 @@ Copy `.env.example` to `.env.local`. Everything except `AUTH_SECRET` has a worki
 | `AUTH_SECRET` | Session signing key. Generate with `npx auth secret`. |
 | `NEXT_PUBLIC_APP_URL` | Public base URL of the app. |
 | `NEXT_PUBLIC_SITE_DOMAIN` | Root domain published websites hang off (`helabiz.lk`). |
+| `COMING_SOON` | `"true"` serves the launch teaser instead of the site. See below. |
+| `COMING_SOON_BYPASS` | The secret that gets you past the teaser while it is up. |
+| `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` | Shown on the teaser. Blank leaves the buttons off. |
+
+### The launch gate
+
+`COMING_SOON="true"` makes `src/proxy.ts` rewrite every request to `/coming-soon` —
+marketing pages, sign-in, the dashboard and published customer sites alike. Static
+assets keep serving, so the page's own images still load.
+
+Because it locks out the team as well, set `COMING_SOON_BYPASS` to a secret and open
+any page with `?preview=<that secret>`. That sets an HttpOnly cookie, good for 30
+days, which exempts the browser and hands back the real site. Leave the variable
+blank and nobody gets through at all.
+
+It is a launch gate, not a security control: the secret is compared as a plain
+string and anyone holding it gets in. Do not treat it as protection for real data.
+
+The teaser itself is bilingual, Sinhala first, and lives in
+`src/app/coming-soon/` — copy in `content.ts`, layout in `coming-soon.tsx`. The
+character that watches your cursor is [`page-mascot`](https://github.com/nilbuild/page-mascot);
+its two sprite sheets are drawn by `npm run mascot`, which is where to go if the
+brand changes. With the gate off, `/coming-soon` still renders so you can look at
+it, but it tells search engines not to index it.
 
 ---
 
