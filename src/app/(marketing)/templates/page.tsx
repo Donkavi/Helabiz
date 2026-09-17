@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check, Eye } from "lucide-react";
+import { ArrowRight, Check, Eye, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TEMPLATES } from "@/lib/website/templates";
+import { artFor } from "@/lib/website/template-art";
 
 export const metadata: Metadata = {
   title: "Website templates",
@@ -22,7 +23,8 @@ export default function TemplatesPage() {
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-relaxed text-muted-foreground text-pretty">
             Every template arrives with its pages, sections, fonts and colours already set. Swap in your products and
-            your words — change anything you like.
+            your words — change anything you like. Two are free forever; the rest come with any paid plan, and you can
+            preview all of them before you decide.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button size="lg" asChild>
@@ -40,7 +42,10 @@ export default function TemplatesPage() {
 
       <section className="mx-auto max-w-6xl px-5 py-16 lg:px-8">
         <div className="grid gap-8 sm:grid-cols-2">
-          {TEMPLATES.map((template) => (
+          {TEMPLATES.map((template) => {
+            const art = artFor(template.category);
+            const premium = template.tier === "premium";
+            return (
             <article key={template.id} id={template.id} className="group scroll-mt-24">
               <Link
                 href={`/templates/${template.id}`}
@@ -68,7 +73,7 @@ export default function TemplatesPage() {
                   </span>
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 top-9 grid grid-cols-2 gap-5 p-6">
+                <div className="absolute inset-x-0 top-9 bottom-[32%] grid grid-cols-2 gap-5 px-6 pt-5">
                   <div className="flex flex-col justify-center gap-2.5">
                     <span className="h-2 w-10 rounded-full" style={{ background: template.theme.primary }} />
                     <span className="h-3.5 w-4/5 rounded-full" style={{ background: template.theme.text, opacity: 0.85 }} />
@@ -84,21 +89,27 @@ export default function TemplatesPage() {
                     />
                   </div>
                   <div
-                    className="h-full w-full"
+                    className="h-full w-full overflow-hidden"
                     style={{
                       background: `linear-gradient(140deg, ${template.theme.secondary}, ${template.theme.surface})`,
                       borderRadius: template.theme.radius,
                     }}
-                  />
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={art[0]} alt="" className="size-full object-cover" />
+                  </div>
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 grid grid-cols-4 gap-2.5 p-4 pt-0">
+                <div className="absolute inset-x-0 bottom-0 grid grid-cols-4 gap-2.5 px-6 pb-5">
                   {[0, 1, 2, 3].map((i) => (
                     <span
                       key={i}
-                      className="aspect-square"
+                      className="aspect-square overflow-hidden"
                       style={{ background: template.theme.surface, borderRadius: template.theme.radius }}
-                    />
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={art[(i + 1) % art.length]} alt="" className="size-full object-cover" />
+                    </span>
                   ))}
                 </div>
 
@@ -117,7 +128,17 @@ export default function TemplatesPage() {
                     {template.description}
                   </p>
                 </div>
-                <Badge variant="soft">{template.category}</Badge>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                  <Badge variant="soft">{template.category}</Badge>
+                  {premium ? (
+                    <Badge variant="muted" title="Included from the Starter plan">
+                      <Lock className="size-3" />
+                      Starter
+                    </Badge>
+                  ) : (
+                    <Badge variant="success">Free</Badge>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] text-muted-foreground">
@@ -137,14 +158,15 @@ export default function TemplatesPage() {
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/sign-up?template=${template.id}`}>
-                    Use this template
+                  <Link href={premium ? "/pricing" : `/sign-up?template=${template.id}`}>
+                    {premium ? "Unlock with Starter" : "Use this template"}
                     <ArrowRight className="size-3.5" />
                   </Link>
                 </Button>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 

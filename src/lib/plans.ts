@@ -39,6 +39,8 @@ export const PLANS: Record<PlanId, Plan> = {
       websites: 1,
       pages: 4,
       teamMembers: 1,
+      // The two designs marked `tier: "free"` in lib/website/templates.ts,
+      // plus the blank one, which is always available.
       templates: 2,
       customDomain: false,
       analytics: false,

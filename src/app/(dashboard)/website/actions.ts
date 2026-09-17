@@ -10,7 +10,14 @@ import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { Domain } from "@/models/Domain";
 import { fieldErrorsFrom, type ActionState } from "@/lib/validations/errors";
-import { assertWithinLimit, checkLimit, LimitError, hasFeature, type LimitBlock } from "@/services/limits-service";
+import {
+  assertWithinLimit,
+  canUseTemplate,
+  checkLimit,
+  LimitError,
+  hasFeature,
+  type LimitBlock,
+} from "@/services/limits-service";
 import {
   applyTemplateToWebsite,
   blankPageSections,
@@ -24,6 +31,9 @@ import { cloneSection } from "@/lib/website/section-registry";
 import { getTheme } from "@/lib/website/themes";
 import { slugify } from "@/lib/utils";
 import type { SectionNode } from "@/types";
+
+const PREMIUM_TEMPLATE_MESSAGE =
+  "That is a premium template. Upgrade to Starter to build from any of our designs.";
 
 /** Shared lookup: the business's (single) website. */
 async function websiteFor(businessId: string) {
@@ -43,6 +53,10 @@ export async function createWebsiteAction(templateId: string) {
 
   const existing = await websiteFor(businessId);
   if (existing) return { ok: false as const, error: "You already have a website." };
+
+  if (!(await canUseTemplate(businessId, templateId))) {
+    return { ok: false as const, error: PREMIUM_TEMPLATE_MESSAGE };
+  }
 
   const website = await createWebsiteFromTemplate(businessId, templateId);
   const home = await WebsitePage.findOne({ websiteId: website._id, isHome: true }).select("_id").lean();
@@ -69,6 +83,11 @@ export async function changeTemplateAction(
   const { businessId } = await requireBusiness();
   const website = await websiteFor(businessId);
   if (!website) return { ok: false, error: "You do not have a website yet." };
+
+  // Checked here as well as in the dialog: a server action is a public entry point.
+  if (!(await canUseTemplate(businessId, templateId))) {
+    return { ok: false, error: PREMIUM_TEMPLATE_MESSAGE };
+  }
 
   const result = await applyTemplateToWebsite(businessId, String(website._id), templateId, {
     applyTheme: options?.applyTheme ?? true,

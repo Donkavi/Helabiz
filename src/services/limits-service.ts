@@ -6,6 +6,7 @@ import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { BusinessMember } from "@/models/BusinessMember";
 import { getPlan, UNLIMITED, type Plan } from "@/lib/plans";
+import { isPremiumTemplate } from "@/lib/website/templates";
 import { monthStart } from "./metrics-service";
 
 export class LimitError extends Error {
@@ -101,6 +102,16 @@ export async function assertWithinLimit(businessId: string, key: LimitKey) {
 }
 
 /** Feature gates that are on/off rather than counted. */
+/**
+ * Whether a plan may build from a given template. Free plans get the designs
+ * marked `tier: "free"`; every paid plan gets all of them.
+ */
+export async function canUseTemplate(businessId: string, templateId: string) {
+  const plan = await planFor(businessId);
+  if (plan.limits.templates === UNLIMITED) return true;
+  return !isPremiumTemplate(templateId);
+}
+
 export async function hasFeature(businessId: string, feature: keyof Plan["limits"]) {
   const plan = await planFor(businessId);
   return Boolean(plan.limits[feature]);

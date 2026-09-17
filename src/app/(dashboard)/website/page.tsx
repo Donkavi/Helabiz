@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { websiteMetrics, daysAgo } from "@/services/metrics-service";
+import { planFor } from "@/services/limits-service";
+import { UNLIMITED } from "@/lib/plans";
 import { formatNumber, relativeTime } from "@/lib/utils";
 import { siteUrlFor, siteDisplayUrl } from "@/lib/website/urls";
 import { getTheme } from "@/lib/website/themes";
@@ -39,6 +41,10 @@ export default async function WebsiteOverviewPage() {
 
   const website = await Website.findOne({ businessId }).lean();
 
+  // Free plans build only from the designs marked free; every paid plan gets all.
+  const plan = await planFor(businessId);
+  const canUsePremium = plan.limits.templates === UNLIMITED;
+
   if (!website) {
     const productCount = await Product.countDocuments({ businessId, status: { $ne: "archived" } });
     return (
@@ -47,7 +53,7 @@ export default async function WebsiteOverviewPage() {
           title="Website"
           description="Build a professional website for your business — no code, no developer."
         />
-        <TemplateChooser productCount={productCount} />
+        <TemplateChooser productCount={productCount} canUsePremium={canUsePremium} />
       </div>
     );
   }
@@ -178,7 +184,7 @@ export default async function WebsiteOverviewPage() {
       <Card>
         <CardContent className="flex flex-wrap items-center gap-5 py-5">
           <span className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border">
-            <TemplateThumbnail theme={plain.theme ?? theme.tokens} />
+            <TemplateThumbnail theme={plain.theme ?? theme.tokens} category={template?.category} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">Template</p>
@@ -191,6 +197,7 @@ export default async function WebsiteOverviewPage() {
           </div>
           <ChangeTemplateButton
             currentTemplateId={plain.templateId ?? undefined}
+            canUsePremium={canUsePremium}
             pageTitles={serialize(pages).map((page) => ({
               title: page.title,
               slug: page.slug,

@@ -1,4 +1,9 @@
 import type { ThemeTokens } from "@/types";
+import { artFor } from "@/lib/website/template-art";
+
+/* Plain <img>: these are local SVGs, which the image optimizer passes through
+   unchanged anyway, and they render a few pixels wide inside a miniature. */
+/* eslint-disable @next/next/no-img-element */
 
 /**
  * A miniature of a template, drawn from its own theme tokens.
@@ -6,7 +11,10 @@ import type { ThemeTokens } from "@/types";
  * Shared by the first-run template chooser and the change-template dialog, so
  * the same template always looks the same wherever it is offered.
  */
-export function TemplateThumbnail({ theme }: { theme: ThemeTokens }) {
+export function TemplateThumbnail({ theme, category }: { theme: ThemeTokens; category?: string }) {
+  // Real artwork where a picture would go, so the miniature reads as a site
+  // rather than a wireframe. Without a category it falls back to flat tone.
+  const art = category ? artFor(category) : null;
   return (
     <div className="flex size-full flex-col" style={{ background: theme.background }}>
       <div
@@ -39,17 +47,25 @@ export function TemplateThumbnail({ theme }: { theme: ThemeTokens }) {
           />
         </div>
         <div
-          className="size-full"
+          className="size-full overflow-hidden"
           style={{
             background: `linear-gradient(135deg, ${theme.secondary}, ${theme.surface})`,
             borderRadius: theme.radius,
           }}
-        />
+        >
+          {art && <img src={art[0]} alt="" className="size-full object-cover" />}
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-1.5 px-3 pb-3">
         {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="aspect-square" style={{ background: theme.surface, borderRadius: theme.radius }} />
+          <span
+            key={i}
+            className="aspect-square overflow-hidden"
+            style={{ background: theme.surface, borderRadius: theme.radius }}
+          >
+            {art && <img src={art[(i + 1) % art.length]} alt="" className="size-full object-cover" />}
+          </span>
         ))}
       </div>
     </div>

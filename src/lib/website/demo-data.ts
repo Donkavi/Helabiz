@@ -1,4 +1,5 @@
 import type { SectionNode } from "@/types";
+import { artFor, PEOPLE_ART, scenesFor } from "./template-art";
 import type { SiteContext, PublicCategory, PublicProduct, SiteBusiness } from "./render-types";
 import type { Template } from "./templates";
 import { normalizeTheme } from "./themes";
@@ -18,26 +19,6 @@ type DemoSet = {
   categories: string[];
   products: { name: string; price: number; was?: number; blurb: string }[];
 };
-
-const P = (name: string) => `/placeholders/${name}.svg`;
-
-/**
- * On-theme artwork per family. Previews cycle through a pool rather than
- * repeating one picture, so a six-up gallery never shows the same image twice.
- */
-const POOLS: Record<string, string[]> = {
-  Fashion: ["fashion-1", "fashion-2", "fashion-3", "fashion-4"].map(P),
-  Bakery: ["bakery-1", "bakery-2", "bakery-3", "bakery-4"].map(P),
-  Restaurant: ["food-1", "food-2", "food-3", "food-4"].map(P),
-  Beauty: ["beauty-1", "beauty-2", "beauty-3", "beauty-4"].map(P),
-  Electronics: ["tech-1", "tech-2", "tech-3", "tech-4"].map(P),
-  Photography: ["photo-1", "photo-2", "photo-3", "photo-4"].map(P),
-  Services: ["service-1", "service-2", "service-3", "service-4"].map(P),
-  "Home Business": ["home-1", "home-2", "home-3", "home-4"].map(P),
-};
-
-/** Kept out of the product pool — a face where a product belongs reads as a bug. */
-const PEOPLE = ["person-1", "person-2", "person-3"].map(P);
 
 /** Keyed by template category, so each preview shows plausible stock. */
 const SETS: Record<string, DemoSet> = {
@@ -179,14 +160,9 @@ function demoId(prefix: string, index: number) {
   return `${prefix}${String(index).padStart(24 - prefix.length, "0")}`;
 }
 
-/** The artwork pool for a template category, falling back to the fashion set. */
-function poolFor(category: string) {
-  return POOLS[category] ?? POOLS.Fashion;
-}
-
 export function demoCatalogue(category: string) {
   const set = SETS[category] ?? FALLBACK;
-  const pool = poolFor(category);
+  const pool = artFor(category);
 
   const categories: PublicCategory[] = set.categories.map((name, index) => ({
     id: demoId("cat", index + 1),
@@ -263,23 +239,6 @@ export function demoSiteContext(template: Template): SiteContext {
   };
 }
 
-/** The family whose backdrops suit a template category. */
-const SCENE_FAMILY: Record<string, string> = {
-  Fashion: "fashion",
-  Bakery: "bakery",
-  Restaurant: "food",
-  Beauty: "beauty",
-  Electronics: "tech",
-  Photography: "photo",
-  Services: "service",
-  "Home Business": "home",
-};
-
-function scenesFor(category: string) {
-  const family = SCENE_FAMILY[category] ?? "fashion";
-  return [`/placeholders/scene-${family}-1.svg`, `/placeholders/scene-${family}-2.svg`];
-}
-
 const isPlaceholder = (value: unknown): value is string =>
   typeof value === "string" && value.startsWith("/placeholders/");
 
@@ -298,14 +257,14 @@ const isPlaceholder = (value: unknown): value is string =>
  * single centred subject blown up to fill the frame looks like a mistake.
  */
 export function decorateForPreview<T extends SectionNode | SectionNode[] | null>(input: T, category: string): T {
-  const photos = poolFor(category);
+  const photos = artFor(category);
   const scenes = scenesFor(category);
   let photoAt = 0;
   let sceneAt = 0;
   let personAt = 0;
   const photo = () => photos[photoAt++ % photos.length];
   const backdrop = () => scenes[sceneAt++ % scenes.length];
-  const person = () => PEOPLE[personAt++ % PEOPLE.length];
+  const person = () => PEOPLE_ART[personAt++ % PEOPLE_ART.length];
 
   const swapIn = (record: Record<string, unknown>, pick: () => string) =>
     Object.fromEntries(

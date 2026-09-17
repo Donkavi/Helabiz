@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Check, Eye, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, Eye, Loader2, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/misc";
 import { TemplateThumbnail } from "@/components/website/template-thumbnail";
+import { PremiumTemplatePanel } from "@/components/dashboard/premium-template-panel";
 import { ALL_TEMPLATES } from "@/lib/website/templates";
 import { cn } from "@/lib/utils";
 import { changeTemplateAction } from "./actions";
@@ -33,16 +34,20 @@ export function ChangeTemplateDialog({
   open,
   onOpenChange,
   currentTemplateId,
+  canUsePremium,
   pageTitles,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentTemplateId?: string;
+  /** False on the free plan, which builds only from the free designs. */
+  canUsePremium: boolean;
   /** The site's current pages, used to say exactly what will be replaced. */
   pageTitles: { title: string; slug: string; isHome: boolean }[];
 }) {
   const router = useRouter();
   const [chosen, setChosen] = React.useState<Template | null>(null);
+  const [locked, setLocked] = React.useState<Template | null>(null);
   const [applyTheme, setApplyTheme] = React.useState(true);
   const [pending, startTransition] = React.useTransition();
 
@@ -50,6 +55,7 @@ export function ChangeTemplateDialog({
     if (pending) return;
     if (next) {
       setChosen(null);
+      setLocked(null);
       setApplyTheme(true);
     }
     onOpenChange(next);
@@ -92,8 +98,19 @@ export function ChangeTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent size={chosen ? "lg" : "full"}>
-        {!chosen ? (
+      <DialogContent size={chosen || locked ? "lg" : "full"}>
+        {locked ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Upgrade to use this template</DialogTitle>
+            </DialogHeader>
+            <PremiumTemplatePanel
+              templateId={locked.id}
+              templateName={locked.name}
+              onBack={() => setLocked(null)}
+            />
+          </>
+        ) : !chosen ? (
           <>
             <DialogHeader>
               <DialogTitle>Change template</DialogTitle>
@@ -106,11 +123,12 @@ export function ChangeTemplateDialog({
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {ALL_TEMPLATES.map((template) => {
                 const current = template.id === currentTemplateId;
+                const premium = template.tier === "premium" && !canUsePremium;
                 return (
                   <div key={template.id} className="relative">
                     <button
                       type="button"
-                      onClick={() => setChosen(template)}
+                      onClick={() => (premium ? setLocked(template) : setChosen(template))}
                       disabled={current}
                       className={cn(
                         "w-full overflow-hidden rounded-xl border bg-card text-left transition-all duration-200",
@@ -125,7 +143,7 @@ export function ChangeTemplateDialog({
                             <Sparkles className="size-6 text-muted-foreground" />
                           </div>
                         ) : (
-                          <TemplateThumbnail theme={template.theme} />
+                          <TemplateThumbnail theme={template.theme} category={template.category} />
                         )}
                         {current && (
                           <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
@@ -140,8 +158,9 @@ export function ChangeTemplateDialog({
                             {template.description}
                           </p>
                         </div>
-                        <Badge variant={current ? "default" : "muted"} className="shrink-0">
-                          {current ? "Current" : template.category}
+                        <Badge variant={current ? "default" : premium ? "warning" : "muted"} className="shrink-0">
+                          {current ? "Current" : premium ? <Lock className="size-3" /> : null}
+                          {current ? "" : premium ? "Starter" : template.category}
                         </Badge>
                       </div>
                     </button>

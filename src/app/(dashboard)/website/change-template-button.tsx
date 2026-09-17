@@ -8,9 +8,11 @@ import { ChangeTemplateDialog } from "./change-template-dialog";
 /** The trigger for the change-template dialog, kept apart so the overview page stays a server component. */
 export function ChangeTemplateButton({
   currentTemplateId,
+  canUsePremium,
   pageTitles,
 }: {
   currentTemplateId?: string;
+  canUsePremium: boolean;
   pageTitles: { title: string; slug: string; isHome: boolean }[];
 }) {
   const [open, setOpen] = React.useState(false);
@@ -25,6 +27,7 @@ export function ChangeTemplateButton({
         open={open}
         onOpenChange={setOpen}
         currentTemplateId={currentTemplateId}
+        canUsePremium={canUsePremium}
         pageTitles={pageTitles}
       />
     </>

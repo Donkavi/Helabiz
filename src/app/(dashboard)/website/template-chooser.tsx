@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Check, Eye, Globe, Loader2, Package, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Check, Eye, Globe, Loader2, Lock, Package, Sparkles, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,23 @@ import { Badge } from "@/components/ui/badge";
 import { ALL_TEMPLATES } from "@/lib/website/templates";
 import { cn } from "@/lib/utils";
 import { TemplateThumbnail } from "@/components/website/template-thumbnail";
+import { PremiumTemplatePanel } from "@/components/dashboard/premium-template-panel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createWebsiteAction } from "./actions";
 import { AiGeneratorDialog } from "./ai-generator-dialog";
 
-export function TemplateChooser({ productCount }: { productCount: number }) {
+export function TemplateChooser({
+  productCount,
+  canUsePremium,
+}: {
+  productCount: number;
+  /** False on the free plan, which builds only from the free designs. */
+  canUsePremium: boolean;
+}) {
   const [selected, setSelected] = React.useState("modern-fashion");
   const [pending, startTransition] = React.useTransition();
   const [aiOpen, setAiOpen] = React.useState(false);
+  const [locked, setLocked] = React.useState<(typeof ALL_TEMPLATES)[number] | null>(null);
 
   const create = () => {
     startTransition(async () => {
@@ -60,13 +70,14 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
         {ALL_TEMPLATES.map((template) => {
           const active = selected === template.id;
           const blank = template.id === "blank";
+          const premium = template.tier === "premium" && !canUsePremium;
           return (
             // The preview link is an anchor, so it sits beside the select button
             // rather than inside it -- an <a> nested in a <button> is invalid.
             <div key={template.id} className="relative">
             <button
               type="button"
-              onClick={() => setSelected(template.id)}
+              onClick={() => (premium ? setLocked(template) : setSelected(template.id))}
               aria-pressed={active}
               className={cn(
                 "group w-full overflow-hidden rounded-xl border bg-card text-left transition-all duration-200",
@@ -82,7 +93,7 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
                     <Sparkles className="size-6 text-muted-foreground" />
                   </div>
                 ) : (
-                  <TemplateThumbnail theme={template.theme} />
+                  <TemplateThumbnail theme={template.theme} category={template.category} />
                 )}
                 {active && (
                   <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
@@ -97,8 +108,9 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
                     {template.description}
                   </p>
                 </div>
-                <Badge variant={active ? "default" : "muted"} className="shrink-0">
-                  {template.category}
+                <Badge variant={active ? "default" : premium ? "warning" : "muted"} className="shrink-0">
+                  {premium && <Lock className="size-3" />}
+                  {premium ? "Starter" : template.category}
                 </Badge>
               </div>
             </button>
@@ -134,6 +146,21 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
           {!pending && <ArrowRight className="size-4" />}
         </Button>
       </div>
+
+      <Dialog open={Boolean(locked)} onOpenChange={(next) => !next && setLocked(null)}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>Upgrade to use this template</DialogTitle>
+          </DialogHeader>
+          {locked && (
+            <PremiumTemplatePanel
+              templateId={locked.id}
+              templateName={locked.name}
+              onBack={() => setLocked(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AiGeneratorDialog open={aiOpen} onOpenChange={setAiOpen} />
     </div>

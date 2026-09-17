@@ -11,8 +11,12 @@ export type TemplatePage = {
   sections: SectionNode[];
 };
 
+export type TemplateTier = "free" | "premium";
+
 export type Template = {
   id: string;
+  /** Free plans get the two plainest designs; the rest come with a paid plan. */
+  tier: TemplateTier;
   name: string;
   category: string;
   description: string;
@@ -90,6 +94,7 @@ const IMG = {
 export const TEMPLATES: Template[] = [
   {
     id: "modern-fashion",
+    tier: "premium",
     name: "Modern Fashion Store",
     category: "Fashion",
     description: "Editorial layout for clothing and accessories, built around big imagery.",
@@ -155,6 +160,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "sri-lankan-bakery",
+    tier: "premium",
     name: "Sri Lankan Bakery",
     category: "Bakery",
     description: "Warm, appetising layout for bakeries, sweets and home kitchens.",
@@ -204,6 +210,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "home-business",
+    tier: "free",
     name: "Home Business",
     category: "Home Business",
     description: "A simple one-page site for a business run from home.",
@@ -244,6 +251,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "beauty-salon",
+    tier: "premium",
     name: "Beauty Salon",
     category: "Beauty",
     description: "Calm, minimal layout for salons, spas and beauty brands.",
@@ -291,6 +299,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "restaurant",
+    tier: "premium",
     name: "Restaurant",
     category: "Restaurant",
     description: "Menu-forward layout for restaurants and cafés.",
@@ -334,6 +343,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "electronics-shop",
+    tier: "premium",
     name: "Electronics Shop",
     category: "Electronics",
     description: "Dense, information-first layout for a technology store.",
@@ -378,6 +388,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "portfolio",
+    tier: "premium",
     name: "Portfolio",
     category: "Photography",
     description: "Dark, image-led portfolio for photographers and creatives.",
@@ -422,6 +433,7 @@ export const TEMPLATES: Template[] = [
 
   {
     id: "service-business",
+    tier: "free",
     name: "Service Business",
     category: "Services",
     description: "Trust-building layout for consultants, trades and agencies.",
@@ -474,6 +486,7 @@ export const TEMPLATES: Template[] = [
 
 export const BLANK_TEMPLATE: Template = {
   id: "blank",
+  tier: "free",
   name: "Start from scratch",
   category: "Blank",
   description: "An empty home page with just a header and footer. Build it your way.",
@@ -497,6 +510,13 @@ export const BLANK_TEMPLATE: Template = {
 };
 
 export const ALL_TEMPLATES = [BLANK_TEMPLATE, ...TEMPLATES];
+
+/** Ids a free plan may build from. Keep `PLANS.free.limits.templates` in step. */
+export const FREE_TEMPLATE_IDS = ALL_TEMPLATES.filter((t) => t.tier === "free").map((t) => t.id);
+
+export function isPremiumTemplate(id?: string | null) {
+  return ALL_TEMPLATES.find((t) => t.id === id)?.tier === "premium";
+}
 
 export function getTemplate(id?: string | null): Template {
   return ALL_TEMPLATES.find((t) => t.id === id) ?? BLANK_TEMPLATE;
