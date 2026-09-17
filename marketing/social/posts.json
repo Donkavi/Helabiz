@@ -1,0 +1,65 @@
+{
+  "_note": "Copy for the launch-teaser images. Edit the Sinhala here and re-run generate-images.ps1. Keep this file UTF-8.",
+  "posts": [
+    {
+      "file": "01-teaser.png",
+      "dark": true,
+      "eyebrow": "ඉක්මනින්ම",
+      "headline": "ඔබේ ව්‍යාපාරයට ඔබේම වෙබ් අඩවියක්",
+      "sub": "කේත ලියන්නේ නැතිව. දවසකින්."
+    },
+    {
+      "file": "02-problem.png",
+      "dark": false,
+      "eyebrow": "හුරුපුරුදු කතාවක්ද?",
+      "headline": "Order ටික WhatsApp අස්සේ නැති වෙනවා",
+      "sub": "මාසෙට ලාභය කීයද කියලා හරියටම දන්නෙත් නෑ. ඒකට විසඳුමක් එනවා."
+    },
+    {
+      "file": "03-builder.png",
+      "dark": true,
+      "eyebrow": "වෙබ් අඩවි තනන්නා",
+      "headline": "Drag කරන්න. Drop කරන්න. Publish කරන්න.",
+      "sub": "Section 40කට වැඩියි. හැම දෙයක්ම ඔබේ ඇහැට පේන විදිහට."
+    },
+    {
+      "file": "04-business.png",
+      "dark": false,
+      "eyebrow": "එකම තැනකින්",
+      "headline": "Order, Stock, ගනුදෙනුකරුවෝ, ලාභය",
+      "sub": "වෙබ් අඩවියෙන් order එකක් ආවම stock එක ඉබේම අඩු වෙනවා."
+    },
+    {
+      "file": "05-pricing.png",
+      "dark": true,
+      "eyebrow": "මිල ගණන්",
+      "headline": "නොමිලේ පටන් ගන්න",
+      "sub": "Card එකක් ඕන නෑ. ව්‍යාපාරය ලොකු වෙනකොට විතරක් upgrade කරන්න."
+    },
+    {
+      "file": "06-follow.png",
+      "dark": false,
+      "eyebrow": "Launch එකට කලින්",
+      "headline": "මුලින්ම දැනගන්න",
+      "sub": "Page එක Follow කරන්න. පළමු මාසේ ලියාපදිංචි වන අයට විශේෂ දීමනාවක්."
+    },
+    {
+      "file": "07-fb-cover.png",
+      "width": 1640,
+      "height": 624,
+      "dark": true,
+      "eyebrow": "ශ්‍රී ලාංකික කුඩා ව්‍යාපාර සඳහා",
+      "headline": "ඔබේ ව්‍යාපාරය. ඔබේ වෙබ් අඩවිය.",
+      "sub": "එකම තැනකින්."
+    },
+    {
+      "file": "08-fb-share.png",
+      "width": 1200,
+      "height": 630,
+      "dark": false,
+      "eyebrow": "ඉක්මනින්ම",
+      "headline": "කේත ලියන්නේ නැතිව වෙබ් අඩවියක්",
+      "sub": "Order, stock, ගනුදෙනුකරුවෝ සහ ලාභය එකම තැනකින්."
+    }
+  ]
+}
