@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ALL_TEMPLATES } from "@/lib/website/templates";
 import { cn } from "@/lib/utils";
+import { TemplateThumbnail } from "@/components/website/template-thumbnail";
 import { createWebsiteAction } from "./actions";
 import { AiGeneratorDialog } from "./ai-generator-dialog";
 
@@ -81,7 +82,7 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
                     <Sparkles className="size-6 text-muted-foreground" />
                   </div>
                 ) : (
-                  <TemplatePreview template={template} />
+                  <TemplateThumbnail theme={template.theme} />
                 )}
                 {active && (
                   <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
@@ -135,51 +136,6 @@ export function TemplateChooser({ productCount }: { productCount: number }) {
       </div>
 
       <AiGeneratorDialog open={aiOpen} onOpenChange={setAiOpen} />
-    </div>
-  );
-}
-
-/** A miniature of the template rendered from its own theme tokens. */
-function TemplatePreview({ template }: { template: (typeof ALL_TEMPLATES)[number] }) {
-  const t = template.theme;
-  return (
-    <div className="flex size-full flex-col">
-      <div
-        className="flex items-center justify-between px-3 py-2"
-        style={{ borderBottom: `1px solid ${t.text}12` }}
-      >
-        <span className="text-[8px] font-bold tracking-tight" style={{ color: t.text }}>
-          {template.name.toUpperCase()}
-        </span>
-        <span className="flex gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="h-1 w-4 rounded-full" style={{ background: t.muted, opacity: 0.5 }} />
-          ))}
-        </span>
-      </div>
-
-      <div className="grid flex-1 grid-cols-2 gap-2 p-3">
-        <div className="flex flex-col justify-center gap-1.5">
-          <span className="h-1 w-6 rounded-full" style={{ background: t.primary }} />
-          <span className="h-2 w-full rounded-full" style={{ background: t.text, opacity: 0.85 }} />
-          <span className="h-2 w-3/4 rounded-full" style={{ background: t.text, opacity: 0.85 }} />
-          <span className="mt-0.5 h-1 w-full rounded-full" style={{ background: t.muted, opacity: 0.4 }} />
-          <span
-            className="mt-1.5 h-4 w-14"
-            style={{ background: t.primary, borderRadius: t.buttonStyle === "pill" ? 999 : t.radius }}
-          />
-        </div>
-        <div
-          className="size-full"
-          style={{ background: `linear-gradient(135deg, ${t.secondary}, ${t.surface})`, borderRadius: t.radius }}
-        />
-      </div>
-
-      <div className="grid grid-cols-4 gap-1.5 px-3 pb-3">
-        {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="aspect-square" style={{ background: t.surface, borderRadius: t.radius }} />
-        ))}
-      </div>
     </div>
   );
 }

@@ -25,7 +25,10 @@ import { websiteMetrics, daysAgo } from "@/services/metrics-service";
 import { formatNumber, relativeTime } from "@/lib/utils";
 import { siteUrlFor, siteDisplayUrl } from "@/lib/website/urls";
 import { getTheme } from "@/lib/website/themes";
+import { ALL_TEMPLATES } from "@/lib/website/templates";
+import { TemplateThumbnail } from "@/components/website/template-thumbnail";
 import { TemplateChooser } from "./template-chooser";
+import { ChangeTemplateButton } from "./change-template-button";
 import { PublishControls } from "./publish-controls";
 
 export const metadata: Metadata = { title: "Website" };
@@ -57,6 +60,7 @@ export default async function WebsiteOverviewPage() {
 
   const plain = serialize(website);
   const theme = getTheme(plain.themeId);
+  const template = ALL_TEMPLATES.find((item) => item.id === plain.templateId);
   const liveUrl = siteUrlFor(business.slug);
   const published = plain.status === "published";
 
@@ -169,6 +173,32 @@ export default async function WebsiteOverviewPage() {
           body="Web address, SEO, cart and checkout options."
         />
       </div>
+
+      {/* Template */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-5 py-5">
+          <span className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border">
+            <TemplateThumbnail theme={plain.theme ?? theme.tokens} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">Template</p>
+            <h2 className="mt-1 text-[16px] font-semibold">{template?.name ?? "Custom layout"}</h2>
+            <p className="mt-1 max-w-xl text-[12.5px] leading-relaxed text-muted-foreground">
+              {template
+                ? `${template.description} Switching rebuilds these pages from a different design — your products and orders are not affected.`
+                : "Switch to one of our designs to rebuild your pages. Your products and orders are not affected."}
+            </p>
+          </div>
+          <ChangeTemplateButton
+            currentTemplateId={plain.templateId ?? undefined}
+            pageTitles={serialize(pages).map((page) => ({
+              title: page.title,
+              slug: page.slug,
+              isHome: Boolean(page.isHome),
+            }))}
+          />
+        </CardContent>
+      </Card>
 
       {/* Pages list */}
       <Card>

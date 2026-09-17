@@ -10,6 +10,8 @@ const WebsiteSchema = new Schema(
     businessId: { type: Schema.Types.ObjectId, ref: "Business", required: true, index: true },
     name: { type: String, required: true },
     subdomain: { type: String, required: true, unique: true, lowercase: true, index: true },
+    /** Which template this site was last built from — shown on the overview. */
+    templateId: String,
     themeId: { type: String, default: "aurora" },
     /** Draft tokens are edited live; publishedTheme is the frozen copy served publicly. */
     theme: { type: Schema.Types.Mixed, required: true },

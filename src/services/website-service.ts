@@ -8,6 +8,8 @@ import { cloneSection, createSection } from "@/lib/website/section-registry";
 import { getTemplate } from "@/lib/website/templates";
 import { normalizeTheme } from "@/lib/website/themes";
 import { uniqueSlug } from "./business-service";
+import { usageFor } from "./limits-service";
+import { UNLIMITED } from "@/lib/plans";
 import type { NavItem, SectionNode, ThemeTokens } from "@/types";
 import type { PublicCategory, PublicProduct, SiteBusiness, SiteSettings } from "@/lib/website/render-types";
 
@@ -32,6 +34,7 @@ export async function createWebsiteFromTemplate(businessId: string, templateId: 
     businessId,
     name: business.name,
     subdomain,
+    templateId: template.id,
     themeId: template.themeId,
     theme: template.theme,
     header,
@@ -68,6 +71,112 @@ export async function createWebsiteFromTemplate(businessId: string, templateId: 
   );
 
   return website;
+}
+
+/**
+ * Rebuilds an existing website from a different template.
+ *
+ * Deliberately not a delete-and-recreate. Pages keep their ids, slugs, titles
+ * and SEO, so inbound links and anything pointing at a page id survive; only
+ * the sections inside them are replaced. Pages the template does not cover —
+ * ones the business added itself — are left alone entirely, and so is the
+ * published snapshot, which means the live site carries on serving the old
+ * design until someone republishes.
+ */
+export async function applyTemplateToWebsite(
+  businessId: string,
+  websiteId: string,
+  templateId: string,
+  { applyTheme = true }: { applyTheme?: boolean } = {},
+) {
+  await connectDB();
+
+  const website = await Website.findOne({ _id: websiteId, businessId });
+  if (!website) throw new Error("Website not found");
+
+  const template = getTemplate(templateId);
+  const business = await Business.findById(businessId).lean();
+  const existing = await WebsitePage.find({ websiteId, businessId }).sort({ sortOrder: 1 });
+
+  // Home is matched by its flag rather than its slug: a business may have
+  // renamed it, and there must never be two.
+  const home = existing.find((page) => page.isHome);
+  const bySlug = new Map(existing.map((page) => [page.slug, page]));
+
+  const { pages: pageLimit } = await usageFor(businessId);
+  let room = pageLimit.limit === UNLIMITED ? Infinity : pageLimit.limit - existing.length;
+
+  const used = new Set<string>();
+  const added: { id: string; title: string; slug: string }[] = [];
+  const skipped: string[] = [];
+  let order = 0;
+
+  for (const page of template.pages) {
+    const target = page.isHome ? home : bySlug.get(page.slug);
+
+    if (target && !used.has(String(target._id))) {
+      target.sections = page.sections.map(cloneSection);
+      target.kind = page.kind ?? "standard";
+      target.sortOrder = order++;
+      target.lastEditedAt = new Date();
+      await target.save();
+      used.add(String(target._id));
+      continue;
+    }
+    if (target) continue; // already claimed by an earlier template page
+
+    if (room < 1) {
+      skipped.push(page.title);
+      continue;
+    }
+
+    const created = await WebsitePage.create({
+      businessId,
+      websiteId,
+      title: page.title,
+      slug: page.slug,
+      isHome: false,
+      kind: page.kind ?? "standard",
+      sections: page.sections.map(cloneSection),
+      publishedSections: [],
+      seo: {
+        title: page.seo?.title ?? page.title,
+        description: page.seo?.description ?? business?.description ?? undefined,
+      },
+      sortOrder: order++,
+      lastEditedAt: new Date(),
+    });
+    room -= 1;
+    added.push({ id: String(created._id), title: created.title, slug: created.slug });
+  }
+
+  // Anything the template did not touch keeps its content and follows on.
+  for (const page of existing) {
+    if (used.has(String(page._id))) continue;
+    page.sortOrder = order++;
+    await page.save();
+  }
+
+  // Existing navigation is kept — it may hold custom links and renamed
+  // labels — and only gains an entry for each page this added.
+  const hrefs = new Set(website.navigation.map((item) => item.href));
+  for (const page of added) {
+    if (hrefs.has(`/${page.slug}`)) continue;
+    website.navigation.push({ id: page.slug, label: page.title, href: `/${page.slug}` });
+  }
+
+  website.templateId = template.id;
+  website.header = cloneSection(template.header);
+  website.footer = cloneSection(template.footer);
+  if (applyTheme) {
+    website.themeId = template.themeId;
+    website.theme = template.theme;
+  }
+  website.hasUnpublishedChanges = true;
+  website.lastEditedAt = new Date();
+  await website.save();
+
+  return { added: added.length, skipped };
 }
 
 /** Copies every page's draft into its published snapshot (spec §47). */

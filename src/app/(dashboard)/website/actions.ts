@@ -12,6 +12,7 @@ import { Domain } from "@/models/Domain";
 import { fieldErrorsFrom, type ActionState } from "@/lib/validations/errors";
 import { assertWithinLimit, checkLimit, LimitError, hasFeature, type LimitBlock } from "@/services/limits-service";
 import {
+  applyTemplateToWebsite,
   blankPageSections,
   createWebsiteFromTemplate,
   publishWebsite,
@@ -49,6 +50,32 @@ export async function createWebsiteAction(templateId: string) {
   revalidatePath("/website");
   revalidatePath("/dashboard");
   redirect(home ? `/website/builder/${home._id}` : "/website");
+}
+
+export type ChangeTemplateResult =
+  | { ok: true; added: number; skipped: string[] }
+  | { ok: false; error: string };
+
+/**
+ * Rebuilds the existing site from a different template.
+ *
+ * Destructive for the pages the template covers, so the confirmation lives in
+ * the dialog that calls this. The live site is untouched until a republish.
+ */
+export async function changeTemplateAction(
+  templateId: string,
+  options?: { applyTheme?: boolean },
+): Promise<ChangeTemplateResult> {
+  const { businessId } = await requireBusiness();
+  const website = await websiteFor(businessId);
+  if (!website) return { ok: false, error: "You do not have a website yet." };
+
+  const result = await applyTemplateToWebsite(businessId, String(website._id), templateId, {
+    applyTheme: options?.applyTheme ?? true,
+  });
+
+  revalidatePath("/website", "layout");
+  return { ok: true, added: result.added, skipped: result.skipped };
 }
 
 export async function publishAction() {
