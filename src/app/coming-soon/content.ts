@@ -37,7 +37,7 @@ export type FeatureIcon =
   | "stock"
   | "money"
   | "invoice"
-  | "free";
+  | "address";
 
 export const COPY: Record<Lang, Copy> = {
   si: {
@@ -75,14 +75,13 @@ export const COPY: Record<Lang, Copy> = {
         body: "Invoice එකක් හදලා එකපාරටම WhatsApp කරන්න. Order තහවුරු කිරීම් සහ delivery update එවන්න.",
       },
       {
-        icon: "free",
-        title: "නොමිලේ පටන් ගන්න",
-        body: "Card එකක් ඕන නෑ. නොමිලේ yourshop.helabiz.lk ලිපිනයක්, සැබෑ වෙබ් අඩවියක් — trial එකක් නෙවෙයි.",
+        icon: "address",
+        title: "ඔබේම වෙබ් ලිපිනයක්",
+        body: "yourshop.helabiz.lk වගේ ලිපිනයක් ලැබෙනවා. ඔබේම domain එකක් තියෙනවා නම් ඒකත් connect කරන්න පුළුවන්.",
       },
     ],
-    priceTitle: "මිල ගැන",
-    priceBody:
-      "නොමිලේ plan එකෙන්ම සැබෑ වෙබ් අඩවියක් publish කරන්න පුළුවන්. ව්‍යාපාරය ලොකු වෙනකොට විතරක් upgrade කරන්න — Rs. 999/මාසෙට පටන්.",
+    priceTitle: "මිල ගණන්",
+    priceBody: "මිල ගණන් launch එකට කලින් මෙතන ප්‍රකාශ කරනවා.",
     followTitle: "මුලින්ම දැනගන්න",
     followBody: "Launch වුනාම දැනගන්න අපේ page එක follow කරන්න. පළමු මාසේ ලියාපදිංචි වෙන අයට විශේෂ දීමනාවක් 🎁",
     facebook: "Facebook එකේ follow කරන්න",
@@ -125,14 +124,13 @@ export const COPY: Record<Lang, Copy> = {
         body: "Make an invoice and send it straight to WhatsApp, along with order confirmations and delivery updates.",
       },
       {
-        icon: "free",
-        title: "Start for free",
-        body: "No card needed. A free yourshop.helabiz.lk address and a real website — not a trial.",
+        icon: "address",
+        title: "Your own web address",
+        body: "You get an address like yourshop.helabiz.lk, and you can connect your own domain if you have one.",
       },
     ],
-    priceTitle: "About the price",
-    priceBody:
-      "The free plan publishes a real website. Upgrade only when the business grows — from Rs. 999 a month.",
+    priceTitle: "Pricing",
+    priceBody: "Pricing will be announced here before launch.",
     followTitle: "Hear about it first",
     followBody: "Follow the page to know the day we launch. Something special for everyone who signs up in the first month 🎁",
     facebook: "Follow on Facebook",

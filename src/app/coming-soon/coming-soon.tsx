@@ -2,14 +2,7 @@
 
 import * as React from "react";
 import { Mascot } from "page-mascot";
-import {
-  BadgeCheck,
-  Boxes,
-  LayoutTemplate,
-  Receipt,
-  ShoppingBag,
-  Wallet,
-} from "lucide-react";
+import { Boxes, Globe, LayoutTemplate, Receipt, ShoppingBag, Wallet } from "lucide-react";
 import { FacebookIcon, InstagramIcon } from "@/components/website/social-icons";
 import { COPY, LANGS, type FeatureIcon, type Lang } from "./content";
 import { cn } from "@/lib/utils";
@@ -20,7 +13,7 @@ const ICONS: Record<FeatureIcon, typeof LayoutTemplate> = {
   stock: Boxes,
   money: Wallet,
   invoice: Receipt,
-  free: BadgeCheck,
+  address: Globe,
 };
 
 /**
