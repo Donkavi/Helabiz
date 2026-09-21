@@ -7,12 +7,14 @@ import { getPlan } from "@/lib/plans";
 import { SidebarContent } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { siteUrlFor } from "@/lib/website/urls";
+import { getSuperAdmin } from "@/lib/permissions/admin";
 import { getLang } from "@/lib/i18n/server";
 import { LangProvider } from "@/lib/i18n/provider";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, business, businessId } = await requireBusiness();
   const lang = await getLang();
+  const admin = await getSuperAdmin();
   await connectDB();
 
   const startOfMonth = new Date();
@@ -61,6 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           user={{ name: user.name, email: user.email, image: user.image }}
+          isSuperAdmin={Boolean(admin)}
           businesses={options}
           activeId={businessId}
           plan={business.plan ?? "free"}

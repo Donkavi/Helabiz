@@ -61,6 +61,7 @@ Copy `.env.example` to `.env.local`. Everything except `AUTH_SECRET` has a worki
 | `AUTH_SECRET` | Session signing key. Generate with `npx auth secret`. |
 | `NEXT_PUBLIC_APP_URL` | Public base URL of the app. |
 | `NEXT_PUBLIC_SITE_DOMAIN` | Root domain published websites hang off (`helabiz.lk`). |
+| `SUPER_ADMIN_EMAILS` | Bootstrap list for the platform admin panel. See below. |
 | `COMING_SOON` | `"true"` serves the launch teaser instead of the site. See below. |
 | `COMING_SOON_BYPASS` | The secret that gets you past the teaser while it is up. |
 | `NEXT_PUBLIC_FACEBOOK_URL` / `NEXT_PUBLIC_INSTAGRAM_URL` | Shown on the teaser. Blank leaves the buttons off. |
@@ -90,6 +91,37 @@ a plan actually does.
 Not yet translated: the dashboard, the builder, sign-in and sign-up, and the
 chrome on published customer websites. The coming-soon page has its own toggle,
 since it ships both languages in the page and is gated separately.
+
+### The platform admin panel
+
+`/admin` is the platform owner's view: every business, every user, plan changes,
+suspensions and an audit log. It is a separate route group with its own gate,
+nothing to do with the per-business roles in `BusinessMember`.
+
+Access comes from `User.platformRole === "admin"`, read from the database on
+every request so revoking it takes effect immediately rather than when a session
+expires. `SUPER_ADMIN_EMAILS` is the bootstrap: anyone listed gets in without the
+stored role, which is how the first admin is created without editing Mongo. The
+panel shows a banner while you are using it, because access that depends on an
+environment variable is easy to lose.
+
+Two rules hold the gate up, both in `src/lib/permissions/admin.ts`:
+
+- Every page calls `requireSuperAdmin()`, which redirects rather than 403s — an
+  admin area should not confirm its own existence.
+- Every server action calls `assertSuperAdmin()` **again**. The layout never runs
+  for a server action, which is a public HTTP endpoint; the layout protects the
+  screen, not the action behind it.
+
+Every mutation is written to `AuditLog` with an `admin.` prefix, including who
+did it and why. `src/services/admin-service.ts` is the only module in the app
+that queries without a `businessId` filter, which keeps the "could this leak one
+tenant into another" question answerable in one file.
+
+Suspending a business is enforced in three places, not one: `requireBusiness`
+(sends the owner to `/suspended`), `resolveBusinessAccess` (the path server
+actions take), and `loadPublishedSite` (their public shop stops serving).
+Nothing is deleted, and restoring is one click.
 
 ### The launch gate
 

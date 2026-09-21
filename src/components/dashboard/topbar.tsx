@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Bell, LogOut, Menu, Monitor, Moon, Plus, Search, Settings, Sun, User as UserIcon } from "lucide-react";
+import { Bell, LogOut, Menu, Monitor, Moon, Plus, Search, Settings, ShieldCheck, Sun, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -32,6 +32,7 @@ export function Topbar({
   usage,
   siteUrl,
   notifications,
+  isSuperAdmin,
 }: {
   user: { name: string; email: string; image?: string };
   businesses: BusinessOption[];
@@ -40,6 +41,8 @@ export function Topbar({
   usage?: { used: number; limit: number };
   siteUrl?: string | null;
   notifications: { id: string; title: string; body?: string; href?: string; createdAt: string }[];
+  /** Platform administrators get a way into the admin panel. */
+  isSuperAdmin?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
@@ -164,6 +167,14 @@ export function Topbar({
             <DropdownMenuItem onSelect={() => router.push("/settings")}>
               <Settings /> {t.topbar.businessSettings}
             </DropdownMenuItem>
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => router.push("/admin")}>
+                  <ShieldCheck /> Platform admin
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={() => signOut({ callbackUrl: "/" })}>
               <LogOut /> {t.topbar.signOut}

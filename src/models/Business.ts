@@ -25,6 +25,10 @@ const BusinessSchema = new Schema(
       youtube: String,
     },
     plan: { type: String, enum: ["free", "starter", "business"], default: "free" },
+    /** Set by a platform admin. A suspended business loses the dashboard and its public site. */
+    status: { type: String, enum: ["active", "suspended"], default: "active", index: true },
+    suspendedAt: Date,
+    suspendedReason: String,
     onboardingStep: { type: String, default: "products" },
   },
   { timestamps: true },

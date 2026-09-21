@@ -8,6 +8,11 @@ const UserSchema = new Schema(
     image: String,
     phone: String,
     emailVerifiedAt: Date,
+    /**
+     * Platform-wide role, nothing to do with BusinessMember.role. "admin" can
+     * see and manage every business on the platform.
+     */
+    platformRole: { type: String, enum: ["user", "admin"], default: "user", index: true },
     lastBusinessId: { type: Schema.Types.ObjectId, ref: "Business" },
     onboardedAt: Date,
   },

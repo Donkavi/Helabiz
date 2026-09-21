@@ -76,6 +76,7 @@ export async function requireBusiness(explicitId?: string) {
     if (membership) {
       const business = await Business.findById(candidate).lean();
       if (business) {
+        if (business.status === "suspended") redirect("/suspended");
         return {
           user,
           business: { ...business, _id: String(business._id) } as BusinessDoc & { _id: string },
@@ -92,6 +93,7 @@ export async function requireBusiness(explicitId?: string) {
 
   const business = await Business.findById(fallback.businessId).lean();
   if (!business) redirect("/onboarding");
+  if (business.status === "suspended") redirect("/suspended");
 
   return {
     user,
@@ -114,6 +116,11 @@ export async function resolveBusinessAccess(businessId: string) {
     status: "active",
   }).lean();
   if (!membership) throw new AccessError();
+
+  // Suspension is checked here as well as in requireBusiness: this is the path
+  // server actions and route handlers take, and they must not slip past it.
+  const business = await Business.findById(businessId).select("status").lean();
+  if (business?.status === "suspended") throw new AccessError("This business is suspended");
 
   return { userId: session.user.id, businessId, role: membership.role as BusinessRole };
 }

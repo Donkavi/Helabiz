@@ -2,7 +2,8 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 
 const AuditLogSchema = new Schema(
   {
-    businessId: { type: Schema.Types.ObjectId, ref: "Business", required: true, index: true },
+    /** Optional: platform-admin actions are not scoped to one business. */
+    businessId: { type: Schema.Types.ObjectId, ref: "Business", index: true },
     userId: { type: Schema.Types.ObjectId, ref: "User" },
     action: { type: String, required: true },
     entity: String,

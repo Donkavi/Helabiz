@@ -50,6 +50,9 @@ export const loadPublishedSite = cache(async (slug: string): Promise<LoadedSite 
 
   const business = await Business.findOne({ slug }).lean();
   if (!business) return null;
+  // A suspended business goes dark publicly as well as in the dashboard,
+  // otherwise suspending it would only inconvenience the owner.
+  if (business.status === "suspended") return null;
 
   const website = await Website.findOne({ businessId: business._id }).lean();
   if (!website || website.status !== "published") return null;
