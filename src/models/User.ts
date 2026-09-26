@@ -13,6 +13,9 @@ const UserSchema = new Schema(
      * see and manage every business on the platform.
      */
     platformRole: { type: String, enum: ["user", "admin"], default: "user", index: true },
+    /** A disabled account cannot sign in, and existing sessions stop working. */
+    status: { type: String, enum: ["active", "disabled"], default: "active", index: true },
+    disabledAt: Date,
     lastBusinessId: { type: Schema.Types.ObjectId, ref: "Business" },
     onboardedAt: Date,
   },

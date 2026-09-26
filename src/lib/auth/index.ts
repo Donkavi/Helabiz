@@ -21,6 +21,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .select("+passwordHash")
           .lean();
         if (!user?.passwordHash) return null;
+        // Disabled by a platform admin. Same null as a bad password: the sign-in
+        // form should not tell a stranger which accounts exist.
+        if (user.status === "disabled") return null;
 
         const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
         if (!valid) return null;

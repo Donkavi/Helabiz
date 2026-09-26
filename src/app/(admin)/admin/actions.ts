@@ -7,10 +7,21 @@ import { AccessError } from "@/lib/permissions";
 import {
   adminCount,
   businessDetail,
+  businessesOwnedBy,
+  deleteBusinessCascade,
+  deleteUser,
+  emailTaken,
   setBusinessPlan,
   setBusinessStatus,
   setPlatformRole,
+  setUserStatus,
+  slugTaken,
+  updateBusiness,
+  updateUser,
 } from "@/services/admin-service";
+import { connectDB } from "@/lib/db/mongoose";
+import { User } from "@/models/User";
+import { slugify } from "@/lib/utils";
 import type { PlanId } from "@/types";
 
 /**
@@ -129,6 +140,218 @@ export async function setPlatformRoleAction(userId: string, role: string): Promi
 
     revalidatePath("/admin", "layout");
     return { ok: true, message: next === "admin" ? "Administrator access granted." : "Administrator access removed." };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+/* ── Editing ──────────────────────────────────────────────────────────── */
+
+const optional = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
+const businessSchema = z.object({
+  name: z.string().trim().min(2, "Give the business a name").max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(2, "The web address needs at least two characters")
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, "Only lowercase letters, numbers and hyphens"),
+  type: optional,
+  phone: optional,
+  email: z
+    .string()
+    .trim()
+    .email("That email does not look right")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  address: optional,
+  city: optional,
+  district: optional,
+});
+
+export async function updateBusinessAction(businessId: string, form: unknown): Promise<AdminResult> {
+  try {
+    const admin = await assertSuperAdmin();
+    const id = idSchema.parse(businessId);
+    const values = businessSchema.parse(form);
+
+    const before = await businessDetail(id);
+    if (!before) return { ok: false, error: "That business no longer exists" };
+
+    // The slug is the public web address, so a clash would break another shop.
+    const slug = slugify(values.slug);
+    if (await slugTaken(slug, id)) return { ok: false, error: `Another business already uses /${slug}` };
+
+    await updateBusiness(id, { ...values, slug });
+    await recordAdminAction(admin, "business.edit", {
+      businessId: id,
+      entity: "business",
+      entityId: id,
+      meta: {
+        business: before.name,
+        ...(before.slug !== slug ? { slugFrom: before.slug, slugTo: slug } : {}),
+      },
+    });
+
+    revalidatePath("/admin", "layout");
+    if (before.slug !== slug) revalidatePath("/site", "layout");
+    return {
+      ok: true,
+      message:
+        before.slug === slug ? "Saved." : `Saved. The public address is now /${slug} — the old one stops working.`,
+    };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+const userSchema = z.object({
+  name: z.string().trim().min(2, "Give the person a name").max(120),
+  email: z.string().trim().email("That email does not look right"),
+  phone: optional,
+});
+
+export async function updateUserAction(userId: string, form: unknown): Promise<AdminResult> {
+  try {
+    const admin = await assertSuperAdmin();
+    const id = idSchema.parse(userId);
+    const values = userSchema.parse(form);
+
+    // The email is the sign-in identity, so a duplicate would lock someone out.
+    if (await emailTaken(values.email, id)) return { ok: false, error: "Another account already uses that email" };
+
+    await updateUser(id, values);
+    await recordAdminAction(admin, "user.edit", { entity: "user", entityId: id, meta: { email: values.email } });
+
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: "Saved." };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+/* ── Status ───────────────────────────────────────────────────────────── */
+
+export async function setUserStatusAction(userId: string, status: string): Promise<AdminResult> {
+  try {
+    const admin = await assertSuperAdmin();
+    const id = idSchema.parse(userId);
+    const next = z.enum(["active", "disabled"]).parse(status);
+
+    if (id === admin.id && next === "disabled") {
+      return { ok: false, error: "You cannot disable your own account" };
+    }
+
+    await connectDB();
+    const target = await User.findById(id).select("name email platformRole").lean();
+    if (!target) return { ok: false, error: "That account no longer exists" };
+    if (next === "disabled" && target.platformRole === "admin") {
+      return { ok: false, error: "Remove their administrator access first" };
+    }
+
+    await setUserStatus(id, next);
+    await recordAdminAction(admin, next === "disabled" ? "user.disable" : "user.enable", {
+      entity: "user",
+      entityId: id,
+      meta: { email: target.email },
+    });
+
+    revalidatePath("/admin", "layout");
+    return {
+      ok: true,
+      message:
+        next === "disabled"
+          ? `${target.name} can no longer sign in. Existing sessions stop working too.`
+          : `${target.name} can sign in again.`,
+    };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+/* ── Deleting ─────────────────────────────────────────────────────────── */
+
+export async function deleteBusinessAction(businessId: string, confirmation: string): Promise<AdminResult> {
+  try {
+    const admin = await assertSuperAdmin();
+    const id = idSchema.parse(businessId);
+
+    const before = await businessDetail(id);
+    if (!before) return { ok: false, error: "That business no longer exists" };
+
+    // Typed confirmation, checked on the server: the dialog can be bypassed.
+    if (confirmation.trim() !== before.name) {
+      return { ok: false, error: "The name you typed does not match" };
+    }
+
+    // Audit first. If the delete half-fails there is still a record of the
+    // attempt, and the counts describe what was there.
+    await recordAdminAction(admin, "business.delete", {
+      entity: "business",
+      entityId: id,
+      meta: {
+        business: before.name,
+        slug: before.slug,
+        orders: before.counts.orders,
+        products: before.counts.products,
+        customers: before.counts.customers,
+        ownerEmail: before.owner?.email,
+      },
+    });
+
+    const report = await deleteBusinessCascade(id);
+    const removed = report.reduce((sum, row) => sum + row.removed, 0);
+
+    revalidatePath("/admin", "layout");
+    revalidatePath("/site", "layout");
+    return { ok: true, message: `${before.name} deleted — ${removed} records removed.` };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+export async function deleteUserAction(userId: string, confirmation: string): Promise<AdminResult> {
+  try {
+    const admin = await assertSuperAdmin();
+    const id = idSchema.parse(userId);
+
+    if (id === admin.id) return { ok: false, error: "You cannot delete your own account" };
+
+    await connectDB();
+    const target = await User.findById(id).select("name email platformRole").lean();
+    if (!target) return { ok: false, error: "That account no longer exists" };
+    if (confirmation.trim().toLowerCase() !== target.email.toLowerCase()) {
+      return { ok: false, error: "The email you typed does not match" };
+    }
+    if (target.platformRole === "admin") {
+      return { ok: false, error: "Remove their administrator access first" };
+    }
+
+    // Refused rather than cascaded: deleting an owner would orphan a live shop
+    // with its orders and customers. Delete or reassign the business first.
+    const owned = await businessesOwnedBy(id);
+    if (owned.length) {
+      return {
+        ok: false,
+        error: `They still own ${owned.map((b) => b.name).join(", ")}. Delete those first.`,
+      };
+    }
+
+    await recordAdminAction(admin, "user.delete", {
+      entity: "user",
+      entityId: id,
+      meta: { email: target.email, name: target.name },
+    });
+    await deleteUser(id);
+
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: `${target.name} deleted.` };
   } catch (error) {
     return failed(error);
   }

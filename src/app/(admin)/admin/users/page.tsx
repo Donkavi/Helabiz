@@ -9,7 +9,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatNumber, relativeTime } from "@/lib/utils";
 import { Pagination } from "../pagination";
-import { RoleToggle } from "./role-toggle";
+import { Badge } from "@/components/ui/badge";
+import { UserActions } from "./user-actions";
 
 export const metadata = { title: "Users" };
 
@@ -84,7 +85,8 @@ export default async function AdminUsersPage({
                       <TableHead>User</TableHead>
                       <TableHead className="text-right">Businesses</TableHead>
                       <TableHead className="text-right">Joined</TableHead>
-                      <TableHead className="text-right">Platform access</TableHead>
+                      <TableHead>Access</TableHead>
+                      <TableHead className="text-right">Manage</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -103,13 +105,17 @@ export default async function AdminUsersPage({
                         <TableCell className="text-right text-[12.5px] text-muted-foreground">
                           {relativeTime(row.createdAt)}
                         </TableCell>
+                        <TableCell>
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            {row.platformRole === "admin" && <Badge variant="default">admin</Badge>}
+                            {row.status === "disabled" && <Badge variant="destructive">disabled</Badge>}
+                            {row.platformRole !== "admin" && row.status !== "disabled" && (
+                              <span className="text-[12.5px] text-muted-foreground">—</span>
+                            )}
+                          </span>
+                        </TableCell>
                         <TableCell className="text-right">
-                          <RoleToggle
-                            userId={row.id}
-                            name={row.name}
-                            role={row.platformRole}
-                            isSelf={row.id === admin.id}
-                          />
+                          <UserActions user={row} isSelf={row.id === admin.id} />
                         </TableCell>
                       </TableRow>
                     ))}

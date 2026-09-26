@@ -65,7 +65,9 @@ export async function requireBusiness(explicitId?: string) {
 
   const cookieStore = await cookies();
   const cookieId = cookieStore.get(ACTIVE_BUSINESS_COOKIE)?.value;
-  const dbUser = await User.findById(user.id).select("lastBusinessId").lean();
+  const dbUser = await User.findById(user.id).select("lastBusinessId status").lean();
+  // A session issued before the account was disabled must not keep working.
+  if (dbUser?.status === "disabled") redirect("/disabled");
 
   const candidates = [explicitId, cookieId, dbUser?.lastBusinessId ? String(dbUser.lastBusinessId) : undefined].filter(
     (v): v is string => Boolean(v) && Types.ObjectId.isValid(v!),
@@ -121,6 +123,9 @@ export async function resolveBusinessAccess(businessId: string) {
   // server actions and route handlers take, and they must not slip past it.
   const business = await Business.findById(businessId).select("status").lean();
   if (business?.status === "suspended") throw new AccessError("This business is suspended");
+
+  const actor = await User.findById(session.user.id).select("status").lean();
+  if (actor?.status === "disabled") throw new AccessError("This account is disabled");
 
   return { userId: session.user.id, businessId, role: membership.role as BusinessRole };
 }

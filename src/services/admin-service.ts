@@ -10,6 +10,18 @@ import { Customer } from "@/models/Customer";
 import { Website } from "@/models/Website";
 import { Subscription } from "@/models/Subscription";
 import { AuditLog } from "@/models/AuditLog";
+import { AnalyticsEvent } from "@/models/AnalyticsEvent";
+import { Category } from "@/models/Category";
+import { Domain } from "@/models/Domain";
+import { Expense } from "@/models/Expense";
+import { InventoryMovement } from "@/models/InventoryMovement";
+import { Invoice } from "@/models/Invoice";
+import { Media } from "@/models/Media";
+import { Notification } from "@/models/Notification";
+import { Payment } from "@/models/Payment";
+import { WebsitePage } from "@/models/WebsitePage";
+import { WebsiteSection } from "@/models/WebsiteSection";
+import { WebsiteTheme } from "@/models/WebsiteTheme";
 import { getPlan, type Plan } from "@/lib/plans";
 import type { PlanId } from "@/types";
 
@@ -257,6 +269,7 @@ export async function businessDetail(businessId: string) {
     district: business.district ?? undefined,
     phone: business.phone ?? undefined,
     email: business.email ?? undefined,
+    address: business.address ?? undefined,
     createdAt: String(business.createdAt),
     owner: owner
       ? { id: String(owner._id), name: owner.name, email: owner.email, joinedAt: String(owner.createdAt) }
@@ -297,7 +310,9 @@ export type UserRow = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   platformRole: string;
+  status: string;
   businesses: number;
   createdAt: string;
 };
@@ -320,7 +335,7 @@ export async function listUsers(query: { search?: string; role?: string; page?: 
       .sort({ createdAt: -1 })
       .skip((page - 1) * PAGE_SIZE)
       .limit(PAGE_SIZE)
-      .select("name email platformRole createdAt")
+      .select("name email phone platformRole status createdAt")
       .lean(),
   ]);
 
@@ -334,7 +349,9 @@ export async function listUsers(query: { search?: string; role?: string; page?: 
     id: String(u._id),
     name: u.name,
     email: u.email,
+    phone: u.phone ?? undefined,
     platformRole: u.platformRole ?? "user",
+    status: u.status ?? "active",
     businesses: byUser.get(String(u._id)) ?? 0,
     createdAt: String(u.createdAt),
   }));
@@ -397,4 +414,116 @@ export async function setPlatformRole(userId: string, role: "user" | "admin") {
 export async function adminCount() {
   await connectDB();
   return User.countDocuments({ platformRole: "admin" });
+}
+
+/* ── Editing ──────────────────────────────────────────────────────────── */
+
+export type BusinessEdit = {
+  name: string;
+  slug: string;
+  type?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  district?: string;
+};
+
+/** True when another business already holds this slug. */
+export async function slugTaken(slug: string, exceptId: string) {
+  await connectDB();
+  const hit = await Business.findOne({ slug, _id: { $ne: exceptId } }).select("_id").lean();
+  return Boolean(hit);
+}
+
+export async function updateBusiness(businessId: string, values: BusinessEdit) {
+  await connectDB();
+  await Business.updateOne({ _id: businessId }, { $set: values });
+}
+
+export type UserEdit = { name: string; email: string; phone?: string };
+
+export async function emailTaken(email: string, exceptId: string) {
+  await connectDB();
+  const hit = await User.findOne({ email: email.toLowerCase(), _id: { $ne: exceptId } }).select("_id").lean();
+  return Boolean(hit);
+}
+
+export async function updateUser(userId: string, values: UserEdit) {
+  await connectDB();
+  await User.updateOne({ _id: userId }, { $set: { ...values, email: values.email.toLowerCase() } });
+}
+
+export async function setUserStatus(userId: string, status: "active" | "disabled") {
+  await connectDB();
+  await User.updateOne(
+    { _id: userId },
+    status === "disabled" ? { $set: { status, disabledAt: new Date() } } : { $set: { status }, $unset: { disabledAt: "" } },
+  );
+}
+
+/** Businesses this user owns — deleting them is refused while any exist. */
+export async function businessesOwnedBy(userId: string) {
+  await connectDB();
+  const owned = await Business.find({ ownerId: userId }).select("name slug").lean();
+  return owned.map((b) => ({ id: String(b._id), name: b.name, slug: b.slug }));
+}
+
+/* ── Deleting ─────────────────────────────────────────────────────────── */
+
+/**
+ * Every collection that stores rows against a business.
+ *
+ * Kept as one list rather than inlined, so adding a collection means adding it
+ * here too. If you add a model with a `businessId`, add it to this array or a
+ * deleted business will leave its rows behind.
+ */
+const BUSINESS_SCOPED = [
+  AnalyticsEvent,
+  BusinessMember,
+  Category,
+  Customer,
+  Domain,
+  Expense,
+  InventoryMovement,
+  Invoice,
+  Media,
+  Notification,
+  Order,
+  Payment,
+  Product,
+  Subscription,
+  Website,
+  WebsitePage,
+  WebsiteSection,
+  WebsiteTheme,
+];
+
+export type DeleteReport = { collection: string; removed: number }[];
+
+/**
+ * Removes a business and everything belonging to it.
+ *
+ * The audit trail is deliberately kept: the record of an administrator deleting
+ * a business should outlive the business. Everything else goes.
+ */
+export async function deleteBusinessCascade(businessId: string): Promise<DeleteReport> {
+  await connectDB();
+
+  const report: DeleteReport = [];
+  for (const model of BUSINESS_SCOPED) {
+    const result = await model.deleteMany({ businessId } as never);
+    if (result.deletedCount) report.push({ collection: model.modelName, removed: result.deletedCount });
+  }
+
+  await Business.deleteOne({ _id: businessId });
+  report.push({ collection: "Business", removed: 1 });
+  return report;
+}
+
+export async function deleteUser(userId: string) {
+  await connectDB();
+  // Memberships go; the audit trail stays, same reasoning as above.
+  await BusinessMember.deleteMany({ userId });
+  await User.deleteOne({ _id: userId });
 }

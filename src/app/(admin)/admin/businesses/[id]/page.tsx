@@ -10,6 +10,7 @@ import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { siteUrlFor } from "@/lib/website/urls";
 import { formatCurrency, formatNumber, relativeTime } from "@/lib/utils";
 import { BusinessControls } from "./business-controls";
+import { BusinessEditor } from "./business-editor";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -42,6 +43,23 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
           <span className="font-mono">/{business.slug}</span>
           {business.city && ` · ${business.city}`} · joined {relativeTime(business.createdAt)}
         </p>
+
+        <div className="mt-4">
+          <BusinessEditor
+            businessId={business.id}
+            counts={business.counts}
+            initial={{
+              name: business.name,
+              slug: business.slug,
+              type: business.type ?? "",
+              phone: business.phone ?? "",
+              email: business.email ?? "",
+              address: business.address ?? "",
+              city: business.city ?? "",
+              district: business.district ?? "",
+            }}
+          />
+        </div>
       </div>
 
       {business.status === "suspended" && business.suspendedReason && (

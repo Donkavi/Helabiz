@@ -118,6 +118,22 @@ did it and why. `src/services/admin-service.ts` is the only module in the app
 that queries without a `businessId` filter, which keeps the "could this leak one
 tenant into another" question answerable in one file.
 
+Editing covers a business's own details and a user's name, email and phone.
+Two uniqueness rules are checked server-side because both would break someone:
+a business slug is its public web address, and a user's email is their login.
+
+Deleting a business cascades through every collection that stores a
+`businessId` — the list lives in one array in `admin-service.ts`, and **if you
+add a model with a `businessId` you must add it there** or a deleted business
+will leave rows behind. Deleting a user is refused while they still own a
+business, rather than cascading: that would orphan a live shop with its orders
+and customers. Both deletes ask you to type the name or email, and the server
+checks it again, because a dialog can be bypassed. Audit entries are written
+*before* the delete and are never removed.
+
+Disabling a user is the reversible alternative: they cannot sign in, and
+existing sessions stop working at the next request (`/disabled`).
+
 Suspending a business is enforced in three places, not one: `requireBusiness`
 (sends the owner to `/suspended`), `resolveBusinessAccess` (the path server
 actions take), and `loadPublishedSite` (their public shop stops serving).
