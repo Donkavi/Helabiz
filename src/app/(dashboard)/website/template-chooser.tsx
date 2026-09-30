@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ALL_TEMPLATES } from "@/lib/website/templates";
+import { ADDON_LIST, addonsTotal, type AddonId } from "@/lib/addons";
+import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { TemplateThumbnail } from "@/components/website/template-thumbnail";
 import { PremiumTemplatePanel } from "@/components/dashboard/premium-template-panel";
@@ -17,23 +19,50 @@ import { AiGeneratorDialog } from "./ai-generator-dialog";
 export function TemplateChooser({
   productCount,
   canUsePremium,
+  activeAddons = [],
 }: {
   productCount: number;
   /** False on the free plan, which builds only from the free designs. */
   canUsePremium: boolean;
+  /** Add-ons already paid for, so they are not offered a second time. */
+  activeAddons?: string[];
 }) {
-  const [selected, setSelected] = React.useState("modern-fashion");
+  // Never open on a design this plan cannot build from: the sticky bar would
+  // say "Starting from Modern Fashion Store" and the server would then refuse
+  // it. On the free trial that means the first design the trial includes.
+  const [selected, setSelected] = React.useState(() =>
+    canUsePremium
+      ? "modern-fashion"
+      : (ALL_TEMPLATES.find((t) => t.tier === "free" && t.id !== "blank")?.id ?? "blank"),
+  );
   const [pending, startTransition] = React.useTransition();
   const [aiOpen, setAiOpen] = React.useState(false);
+  // Chosen here, paid for afterwards: the site is built either way, and the
+  // add-ons switch on once the deposit for them is approved.
+  const [wanted, setWanted] = React.useState<AddonId[]>([]);
   const [locked, setLocked] = React.useState<(typeof ALL_TEMPLATES)[number] | null>(null);
+
+  // The designs this plan can actually use come first, so the free trial is
+  // not a scroll through mostly locked cards.
+  const ordered = React.useMemo(
+    () =>
+      canUsePremium
+        ? ALL_TEMPLATES
+        : [...ALL_TEMPLATES].sort((a, b) => Number(a.tier === "premium") - Number(b.tier === "premium")),
+    [canUsePremium],
+  );
+  const includedCount = ALL_TEMPLATES.filter((t) => t.tier === "free").length;
 
   const create = () => {
     startTransition(async () => {
-      const result = await createWebsiteAction(selected);
+      const result = await createWebsiteAction(selected, wanted);
       // A successful create redirects, so reaching here means it failed.
       if (result && !result.ok) toast.error(result.error ?? "Could not create your website");
     });
   };
+
+  const offered = ADDON_LIST.filter((addon) => !activeAddons.includes(addon.id));
+  const monthly = addonsTotal(wanted);
 
   return (
     <div className="space-y-6">
@@ -56,6 +85,13 @@ export function TemplateChooser({
                 Add a few products first so your shop pages have something to show.
               </p>
             )}
+            {!canUsePremium && (
+              <p className="mt-3 flex items-center gap-2 text-[13px] text-muted-foreground">
+                <Lock className="size-3.5 shrink-0" />
+                Your free trial builds from {includedCount} of these {ALL_TEMPLATES.length} designs. A paid plan opens
+                the rest.
+              </p>
+            )}
           </div>
 
           <Button variant="outline" onClick={() => setAiOpen(true)}>
@@ -67,7 +103,7 @@ export function TemplateChooser({
 
       {/* Templates */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {ALL_TEMPLATES.map((template) => {
+        {ordered.map((template) => {
           const active = selected === template.id;
           const blank = template.id === "blank";
           const premium = template.tier === "premium" && !canUsePremium;
@@ -132,13 +168,62 @@ export function TemplateChooser({
         })}
       </div>
 
+      {offered.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+          <h3 className="text-[15px] font-semibold">Add more to your website</h3>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">
+            Optional extras, {formatCurrency(200, { decimals: false })} each per month. Your website is created either
+            way — these switch on once you have paid for them.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {offered.map((addon) => {
+              const ticked = wanted.includes(addon.id);
+              return (
+                <label
+                  key={addon.id}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors",
+                    ticked
+                      ? "border-primary/55 bg-primary-muted/30"
+                      : "border-border bg-background hover:bg-accent/40",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4 accent-[var(--primary)]"
+                    checked={ticked}
+                    onChange={() =>
+                      setWanted((current) =>
+                        current.includes(addon.id)
+                          ? current.filter((id) => id !== addon.id)
+                          : [...current, addon.id],
+                      )
+                    }
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-[13.5px] font-medium">{addon.name}</span>
+                    <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted-foreground">
+                      {addon.tagline}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
         <p className="text-[13.5px] text-muted-foreground">
           Starting from{" "}
           <span className="font-semibold text-foreground">
             {ALL_TEMPLATES.find((t) => t.id === selected)?.name}
           </span>
-          . You can change everything later.
+          .{" "}
+          {monthly > 0
+            ? `Plus ${formatCurrency(monthly, { decimals: false })} a month of add-ons.`
+            : "You can change everything later."}
         </p>
         <Button size="lg" onClick={create} disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}

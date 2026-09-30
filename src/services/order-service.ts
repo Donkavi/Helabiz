@@ -5,6 +5,7 @@ import { Product } from "@/models/Product";
 import { Customer } from "@/models/Customer";
 import { InventoryMovement } from "@/models/InventoryMovement";
 import { Notification } from "@/models/Notification";
+import { sendOrderPlacedEmail, sendOrderStatusEmail } from "@/services/order-mail";
 import { REVENUE_STATUSES } from "./metrics-service";
 import type { OrderSource, OrderStatus, PaymentMethod, PaymentStatus } from "@/types";
 
@@ -177,6 +178,21 @@ export async function createOrder(input: CreateOrderInput) {
     });
   }
 
+  // Gated on the add-on, and deliberately not awaited for its result beyond
+  // its own error handling: the order is already saved and belongs to the
+  // customer whether or not the confirmation reaches them.
+  await sendOrderPlacedEmail(input.businessId, {
+    orderNumber,
+    total: totals.total,
+    items: order.items.map((item) => ({
+      name: item.name,
+      variantName: item.variantName,
+      quantity: item.quantity,
+      total: item.total,
+    })),
+    customer: { name: input.customer.name, email: input.customer.email },
+  });
+
   return order;
 }
 
@@ -230,5 +246,26 @@ export async function changeOrderStatus(businessId: string, orderId: string, sta
   await order.save();
 
   if (order.customerId) await recalculateCustomerTotals(businessId, String(order.customerId));
+
+  // The customer hears about the move, if the shop pays for that.
+  const customer = order.customerId
+    ? await Customer.findById(order.customerId).select("name email").lean()
+    : null;
+  await sendOrderStatusEmail(
+    businessId,
+    {
+      orderNumber: order.orderNumber,
+      total: order.total,
+      items: order.items.map((item) => ({
+        name: item.name,
+        variantName: item.variantName,
+        quantity: item.quantity,
+        total: item.total,
+      })),
+      customer: customer ? { name: customer.name, email: customer.email } : null,
+    },
+    status,
+  );
+
   return order;
 }

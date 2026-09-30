@@ -44,7 +44,9 @@ export function PricingTable({ currentPlan, lang = DEFAULT_LANG }: { currentPlan
               <span className="text-[34px] font-semibold tracking-[-0.03em]">
                 {plan.price === 0 ? t.planCard.free : `Rs. ${plan.price.toLocaleString("en-LK")}`}
               </span>
-              {plan.price > 0 && <span className="text-[13.5px] text-muted-foreground">{t.planCard.perMonth}</span>}
+              <span className="text-[13.5px] text-muted-foreground">
+                {plan.price === 0 ? t.planCard.freeFor : t.planCard.perMonth}
+              </span>
             </div>
 
             <p className="mt-4 text-[13.5px] leading-relaxed text-muted-foreground">{copy.description}</p>

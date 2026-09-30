@@ -16,7 +16,7 @@ export function SignInForm({ redirectTo, initialError }: { redirectTo?: string; 
   const [show, setShow] = React.useState(false);
 
   return (
-    <form action={action} className="mt-8 space-y-4" noValidate>
+    <form action={action} className="mt-5 space-y-4" noValidate>
       <input type="hidden" name="redirectTo" value={redirectTo ?? "/dashboard"} />
 
       {state?.error && (

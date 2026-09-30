@@ -3,7 +3,14 @@
 import * as React from "react";
 import type { SectionNode } from "@/types";
 import type { SiteContext } from "@/lib/website/render-types";
-import { WEBSITE_BASE_CSS, buildSectionCss, themeCssVars } from "@/lib/website/styles";
+import {
+  NAV_BREAKPOINT,
+  NAV_RULES,
+  WEBSITE_BASE_CSS,
+  buildSectionCss,
+  themeCssVars,
+  viewportOverrideCss,
+} from "@/lib/website/styles";
 import { SectionList, SectionRenderer } from "./section-renderer";
 
 const RESPONSIVE_CSS = `
@@ -19,11 +26,7 @@ const RESPONSIVE_CSS = `
 .w-scroll-row{scrollbar-width:thin}
 .w-scroll-row::-webkit-scrollbar{height:6px}
 .w-scroll-row::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--w-text) 20%,transparent);border-radius:999px}
-@media (max-width:820px){
-  .w-nav-desktop{display:none}
-  .w-burger{display:inline-flex!important}
-  .w-hero-split{gap:28px!important}
-}
+@media (max-width:${NAV_BREAKPOINT}px){${NAV_RULES}}
 `;
 
 /** Emits the compiled stylesheet for a page's sections. */
@@ -40,7 +43,13 @@ export function WebsiteStyles({
     () => buildSectionCss(nodes, { theme: ctx.theme, mode, viewport: ctx.viewport }),
     [nodes, ctx.theme, ctx.viewport, mode],
   );
-  return <style dangerouslySetInnerHTML={{ __html: `${WEBSITE_BASE_CSS}\n${RESPONSIVE_CSS}\n${css}` }} />;
+  // Last in the cascade, so it beats the media-query rules it stands in for.
+  // Empty on the public site, which has a real viewport to measure.
+  const simulated = mode === "editor" ? viewportOverrideCss(ctx.viewport) : "";
+
+  return (
+    <style dangerouslySetInnerHTML={{ __html: `${WEBSITE_BASE_CSS}\n${RESPONSIVE_CSS}\n${css}\n${simulated}` }} />
+  );
 }
 
 /**

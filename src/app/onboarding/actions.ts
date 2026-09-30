@@ -35,5 +35,6 @@ export async function createBusinessAction(_prev: OnboardingState, formData: For
     maxAge: 60 * 60 * 24 * 365,
   });
 
-  redirect("/dashboard?welcome=1");
+  // Straight to the trial gate rather than bouncing off the dashboard one.
+  redirect("/trial");
 }

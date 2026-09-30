@@ -1,6 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { connectDB } from "@/lib/db/mongoose";
+import { accessInfo } from "@/lib/access";
+import { activeAddons, type AddonId } from "@/lib/addons";
 import { Business } from "@/models/Business";
 import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
@@ -18,6 +20,8 @@ import type { SectionNode } from "@/types";
 
 export type LoadedSite = {
   businessId: string;
+  /** Website add-ons this shop is currently paying for. */
+  addons: AddonId[];
   websiteId: string;
   slug: string;
   status: string;
@@ -53,6 +57,10 @@ export const loadPublishedSite = cache(async (slug: string): Promise<LoadedSite 
   // A suspended business goes dark publicly as well as in the dashboard,
   // otherwise suspending it would only inconvenience the owner.
   if (business.status === "suspended") return null;
+  // Same when access has lapsed — an unstarted or finished trial, or a paid
+  // period that ran out. The website is part of what was being paid for, so
+  // it closes with the dashboard.
+  if (accessInfo(business).locked) return null;
 
   const website = await Website.findOne({ businessId: business._id }).lean();
   if (!website || website.status !== "published") return null;
@@ -88,6 +96,7 @@ export const loadPublishedSite = cache(async (slug: string): Promise<LoadedSite 
 
   return {
     businessId: String(business._id),
+    addons: [...activeAddons(business)],
     websiteId: String(website._id),
     slug,
     status: website.status,

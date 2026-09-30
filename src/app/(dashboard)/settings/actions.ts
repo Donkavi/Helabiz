@@ -7,12 +7,8 @@ import { requireBusiness, requireUser, assertRole } from "@/lib/permissions";
 import { connectDB } from "@/lib/db/mongoose";
 import { Business } from "@/models/Business";
 import { User } from "@/models/User";
-import { Subscription } from "@/models/Subscription";
-import { Payment } from "@/models/Payment";
 import { businessSettingsSchema } from "@/lib/validations/business";
 import { fieldErrorsFrom, type ActionState } from "@/lib/validations/errors";
-import type { PlanId } from "@/types";
-import { PLANS } from "@/lib/plans";
 
 export async function saveBusinessSettingsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { businessId, role } = await requireBusiness();
@@ -96,63 +92,3 @@ export async function saveAccountAction(_prev: ActionState, formData: FormData):
   return { ok: true };
 }
 
-/**
- * Plan changes (spec §41, §6).
- *
- * No payment provider is connected, so this records the intent and the payment
- * row a provider would later settle. `Payment` and `Subscription` are the seam:
- * a real gateway marks the payment succeeded and the plan follows.
- */
-export async function changePlanAction(plan: PlanId) {
-  const { businessId, role, business } = await requireBusiness();
-
-  try {
-    assertRole(role, "owner");
-  } catch {
-    return { ok: false as const, error: "Only the business owner can change the plan." };
-  }
-
-  if (!PLANS[plan]) return { ok: false as const, error: "Unknown plan" };
-  if (business.plan === plan) return { ok: true as const, message: "You are already on that plan." };
-
-  await connectDB();
-  const price = PLANS[plan].price;
-
-  if (price > 0) {
-    await Payment.create({
-      businessId,
-      kind: "subscription",
-      reference: `plan:${plan}`,
-      amount: price,
-      currency: "LKR",
-      provider: "manual",
-      status: "pending",
-      meta: { from: business.plan, to: plan },
-    });
-  }
-
-  await Subscription.findOneAndUpdate(
-    { businessId },
-    {
-      businessId,
-      plan,
-      status: price > 0 ? "trialing" : "active",
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      provider: "manual",
-    },
-    { upsert: true },
-  );
-
-  await Business.updateOne({ _id: businessId }, { $set: { plan } });
-
-  revalidatePath("/settings/billing");
-  revalidatePath("/dashboard", "layout");
-  return {
-    ok: true as const,
-    message:
-      price > 0
-        ? `You are on the ${PLANS[plan].name} plan. We will be in touch about payment.`
-        : `Switched to the ${PLANS[plan].name} plan.`,
-  };
-}

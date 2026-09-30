@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/permissions";
+import { googleEnabled } from "@/lib/auth";
+import { GoogleButton } from "../google-button";
 import { SignUpForm } from "./sign-up-form";
 
 export const metadata: Metadata = { title: "Create your account" };
@@ -17,6 +19,8 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
       <p className="mt-2 text-[14px] text-muted-foreground">
         Free forever plan. No card required. You can publish a real website today.
       </p>
+
+      {googleEnabled && <GoogleButton label="Sign up with Google" />}
 
       <SignUpForm template={params.template} />
 

@@ -527,3 +527,61 @@ export async function deleteUser(userId: string) {
   await BusinessMember.deleteMany({ userId });
   await User.deleteOne({ _id: userId });
 }
+
+/** Subscription payments for the review queue, newest first. */
+export async function listPayments(query: { status?: string; page?: number } = {}) {
+  await connectDB();
+  const page = Math.max(1, query.page ?? 1);
+  const perPage = 25;
+
+  const filter: Record<string, unknown> = { kind: "subscription" };
+  if (query.status && query.status !== "all") filter.status = query.status;
+
+  const [rows, total] = await Promise.all([
+    Payment.find(filter)
+      .sort({ slipUploadedAt: -1, createdAt: -1 })
+      .skip((page - 1) * perPage)
+      .limit(perPage)
+      .lean(),
+    Payment.countDocuments(filter),
+  ]);
+
+  // One lookup for the names, rather than a query per row.
+  const businessIds = [...new Set(rows.map((row) => String(row.businessId)))];
+  const businesses = await Business.find({ _id: { $in: businessIds } } as never)
+    .select("name slug plan planEndsAt")
+    .lean();
+  const byId = new Map(businesses.map((b) => [String(b._id), b]));
+
+  return {
+    rows: rows.map((row) => {
+      const business = byId.get(String(row.businessId));
+      return {
+        id: String(row._id),
+        businessId: String(row.businessId),
+        businessName: business?.name ?? "Deleted business",
+        businessSlug: business?.slug ?? "",
+        currentPlan: business?.plan ?? "free",
+        plan: row.plan ?? "",
+        addons: (row.addons ?? []) as string[],
+        reference: row.reference ?? "",
+        amount: row.amount ?? 0,
+        status: row.status ?? "pending",
+        slipUrl: row.slipUrl ?? "",
+        slipName: row.slipName ?? "",
+        slipUploadedAt: row.slipUploadedAt ? String(row.slipUploadedAt) : "",
+        reviewNote: row.reviewNote ?? "",
+        createdAt: String(row.createdAt),
+      };
+    }),
+    total,
+    page,
+    pages: Math.max(1, Math.ceil(total / perPage)),
+  };
+}
+
+/** How many slips are sitting in the queue, for the nav badge and the overview. */
+export async function paymentsAwaitingReview() {
+  await connectDB();
+  return Payment.countDocuments({ kind: "subscription", status: "review" });
+}

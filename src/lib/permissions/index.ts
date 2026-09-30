@@ -7,6 +7,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import { Business, type BusinessDoc } from "@/models/Business";
 import { BusinessMember } from "@/models/BusinessMember";
 import { User } from "@/models/User";
+import { accessInfo, accessRedirect } from "@/lib/access";
 import type { BusinessRole } from "@/types";
 
 export const ACTIVE_BUSINESS_COOKIE = "helabiz.business";
@@ -54,12 +55,34 @@ export async function listUserBusinesses(userId: string) {
 }
 
 /**
+ * Closes the dashboard when the business has no access: a trial not yet
+ * started, a trial that ran out, or a paid period that lapsed.
+ *
+ * Paying is the one thing a locked business must still be able to do —
+ * otherwise the only escape would be to never have been locked — so the
+ * renewal screens and the payment actions pass `allowLocked`.
+ */
+function gateAccess(
+  business: { plan?: string | null; trialEndsAt?: Date | string | null; planEndsAt?: Date | string | null },
+  allowLocked?: boolean,
+) {
+  if (allowLocked) return;
+  const access = accessInfo(business);
+  if (access.locked) redirect(accessRedirect(access));
+}
+
+export type BusinessGateOptions = {
+  /** Let a business through even though its trial is unactivated or expired. */
+  allowLocked?: boolean;
+};
+
+/**
  * The single authorization gate. Resolves the active business from the cookie
  * (or the user's last-used business) and verifies membership before returning.
  * Every business-scoped query in the app derives its `businessId` from here,
  * which is what keeps tenants isolated (spec §50).
  */
-export async function requireBusiness(explicitId?: string) {
+export async function requireBusiness(explicitId?: string, options: BusinessGateOptions = {}) {
   const user = await requireUser();
   await connectDB();
 
@@ -79,6 +102,7 @@ export async function requireBusiness(explicitId?: string) {
       const business = await Business.findById(candidate).lean();
       if (business) {
         if (business.status === "suspended") redirect("/suspended");
+        gateAccess(business, options.allowLocked);
         return {
           user,
           business: { ...business, _id: String(business._id) } as BusinessDoc & { _id: string },
@@ -96,6 +120,7 @@ export async function requireBusiness(explicitId?: string) {
   const business = await Business.findById(fallback.businessId).lean();
   if (!business) redirect("/onboarding");
   if (business.status === "suspended") redirect("/suspended");
+  gateAccess(business, options.allowLocked);
 
   return {
     user,
@@ -121,8 +146,18 @@ export async function resolveBusinessAccess(businessId: string) {
 
   // Suspension is checked here as well as in requireBusiness: this is the path
   // server actions and route handlers take, and they must not slip past it.
-  const business = await Business.findById(businessId).select("status").lean();
+  const business = await Business.findById(businessId).select("status plan trialEndsAt planEndsAt").lean();
   if (business?.status === "suspended") throw new AccessError("This business is suspended");
+  if (business) {
+    const access = accessInfo(business);
+    if (access.locked) {
+      throw new AccessError(
+        access.isTrial
+          ? "This free trial has ended. Choose a plan to carry on."
+          : "This subscription has ended. Renew to carry on.",
+      );
+    }
+  }
 
   const actor = await User.findById(session.user.id).select("status").lean();
   if (actor?.status === "disabled") throw new AccessError("This account is disabled");

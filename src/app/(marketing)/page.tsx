@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BuilderMockup } from "@/components/marketing/builder-mockup";
 import { PricingTable } from "@/components/marketing/pricing-table";
+import { TemplatePreview } from "@/components/marketing/template-preview";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/misc";
 import { TEMPLATES } from "@/lib/website/templates";
 import { getLang } from "@/lib/i18n/server";
@@ -254,18 +255,8 @@ export default async function LandingPage() {
               href={`/templates#${template.id}`}
               className="group overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
             >
-              <div
-                className="relative aspect-4/3 overflow-hidden"
-                style={{ background: `linear-gradient(140deg, ${template.theme.primary}, ${template.theme.secondary})` }}
-              >
-                <div className="absolute inset-0 flex flex-col justify-end gap-1.5 p-4">
-                  <span className="h-1.5 w-16 rounded-full bg-white/85" />
-                  <span className="h-1.5 w-24 rounded-full bg-white/60" />
-                  <div className="mt-1.5 flex gap-1.5">
-                    <span className="h-4 w-12 rounded-[4px] bg-white/85" />
-                    <span className="h-4 w-12 rounded-[4px] border border-white/60" />
-                  </div>
-                </div>
+              <div className="relative aspect-4/3 overflow-hidden">
+                <TemplatePreview template={template} compact />
               </div>
               <div className="p-4">
                 <p className="text-[14px] font-semibold group-hover:text-primary">{template.name}</p>

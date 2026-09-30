@@ -19,6 +19,8 @@ import {
   updateBusiness,
   updateUser,
 } from "@/services/admin-service";
+import { approvePayment, rejectPayment } from "@/services/subscription-service";
+import { ADDONS } from "@/lib/addons";
 import { connectDB } from "@/lib/db/mongoose";
 import { User } from "@/models/User";
 import { slugify } from "@/lib/utils";
@@ -355,4 +357,60 @@ export async function deleteUserAction(userId: string, confirmation: string): Pr
   } catch (error) {
     return failed(error);
   }
+}
+
+/**
+ * Confirming a deposit.
+ *
+ * This is the only path by which a business gains paid access, so like every
+ * other action here it re-checks the gate and leaves an audit entry naming
+ * the administrator who decided.
+ */
+export async function approvePaymentAction(paymentId: string): Promise<AdminResult> {
+  const admin = await assertSuperAdmin();
+  const parsed = idSchema.safeParse(paymentId);
+  if (!parsed.success) return { ok: false, error: "Unknown payment" };
+
+  const result = await approvePayment(parsed.data, admin.id);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  await recordAdminAction(admin, "payment.approve", {
+    entity: "payment",
+    entityId: parsed.data,
+    meta: { plan: result.plan, addons: result.addons, endsAt: result.endsAt?.toISOString() },
+  });
+
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin");
+
+  // An add-ons-only payment has no plan period to report.
+  const bought = [result.plan ? `the ${result.plan} plan` : null, ...result.addons.map((id) => ADDONS[id].name)]
+    .filter(Boolean)
+    .join(", ");
+  return {
+    ok: true,
+    message: result.endsAt ? `Approved — ${bought}, until ${result.endsAt.toDateString()}.` : `Approved — ${bought}.`,
+  };
+}
+
+export async function rejectPaymentAction(paymentId: string, note: string): Promise<AdminResult> {
+  const admin = await assertSuperAdmin();
+  const parsed = idSchema.safeParse(paymentId);
+  if (!parsed.success) return { ok: false, error: "Unknown payment" };
+
+  const reason = note.trim();
+  // The owner sees this verbatim, so an empty one would be worse than useless.
+  if (reason.length < 4) return { ok: false, error: "Give a reason the owner can act on." };
+
+  const result = await rejectPayment(parsed.data, admin.id, reason);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  await recordAdminAction(admin, "payment.reject", {
+    entity: "payment",
+    entityId: parsed.data,
+    meta: { note: reason },
+  });
+
+  revalidatePath("/admin/payments");
+  return { ok: true, message: "Marked as not confirmed. The owner has been told why." };
 }

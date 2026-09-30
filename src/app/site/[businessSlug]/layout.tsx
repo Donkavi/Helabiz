@@ -6,6 +6,7 @@ import { siteUrlFor } from "@/lib/website/urls";
 import { CartProvider } from "@/components/website/cart-provider";
 import { CartDrawer } from "@/components/website/cart-drawer";
 import { AnalyticsBeacon } from "@/components/website/analytics-beacon";
+import { WhatsAppBubble } from "@/components/website/whatsapp-bubble";
 
 /**
  * Multi-tenant and database-backed: every response depends on which business is
@@ -56,6 +57,12 @@ export default async function SiteLayout({
 
   const fontHref = googleFontsHref([site.ctx.theme.headingFont, site.ctx.theme.bodyFont]);
 
+  // The chat add-on needs a number to chat to; without one there is nothing
+  // to show, however much has been paid.
+  const chatNumber = site.addons.includes("whatsapp_chat")
+    ? site.ctx.business.whatsapp || site.ctx.business.phone || ""
+    : "";
+
   return (
     <>
       {fontHref && (
@@ -70,6 +77,13 @@ export default async function SiteLayout({
         <CartDrawer ctx={site.ctx} />
       </CartProvider>
       <AnalyticsBeacon businessId={site.businessId} websiteId={site.websiteId} />
+      {chatNumber && (
+        <WhatsAppBubble
+          phone={chatNumber}
+          businessName={site.ctx.business.name}
+          basePath={site.ctx.basePath}
+        />
+      )}
     </>
   );
 }

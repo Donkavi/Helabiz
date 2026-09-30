@@ -52,12 +52,9 @@ export async function createBusinessForUser(userId: string, data: CreateBusiness
   });
 
   await BusinessMember.create({ businessId: business._id, userId, role: "owner", status: "active" });
-  await Subscription.create({
-    businessId: business._id,
-    plan: "free",
-    status: "active",
-    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-  });
+  // No period yet: a new business is on an unstarted trial, and the dates are
+  // written by `activateTrial` when the owner actually starts it.
+  await Subscription.create({ businessId: business._id, plan: "free", status: "active" });
   await User.findByIdAndUpdate(userId, { lastBusinessId: business._id, onboardedAt: new Date() });
 
   return business;

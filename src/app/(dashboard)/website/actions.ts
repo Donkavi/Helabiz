@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isAddonId } from "@/lib/addons";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireBusiness } from "@/lib/permissions";
@@ -41,7 +42,7 @@ async function websiteFor(businessId: string) {
   return Website.findOne({ businessId });
 }
 
-export async function createWebsiteAction(templateId: string) {
+export async function createWebsiteAction(templateId: string, addons: string[] = []) {
   const { businessId } = await requireBusiness();
 
   try {
@@ -63,6 +64,12 @@ export async function createWebsiteAction(templateId: string) {
 
   revalidatePath("/website");
   revalidatePath("/dashboard");
+
+  // Add-ons chosen while building are a request, not a purchase: the site is
+  // already made, and the checkout is where they are actually bought.
+  const wanted = [...new Set(addons.filter(isAddonId))];
+  if (wanted.length) redirect(`/settings/billing?addons=${wanted.join(",")}#checkout`);
+
   redirect(home ? `/website/builder/${home._id}` : "/website");
 }
 

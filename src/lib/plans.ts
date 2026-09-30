@@ -29,10 +29,11 @@ export const UNLIMITED = Number.POSITIVE_INFINITY;
 export const PLANS: Record<PlanId, Plan> = {
   free: {
     id: "free",
-    name: "Free",
+    name: "Free trial",
     price: 0,
-    tagline: "Get online this week",
-    description: "Everything you need to test the waters and take your first online orders.",
+    tagline: "Seven days, no card",
+    description:
+      "Everything you need to open a real shop online, free for 7 days. Choose a plan before it ends to stay open.",
     limits: {
       ordersPerMonth: 20,
       products: 50,
@@ -50,6 +51,7 @@ export const PLANS: Record<PlanId, Plan> = {
       removeBranding: false,
     },
     features: [
+      "Full access for 7 days",
       "20 orders per month",
       "50 products",
       "Basic website builder",

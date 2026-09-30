@@ -21,7 +21,7 @@ export function SignUpForm({ template }: { template?: string }) {
   const [show, setShow] = React.useState(false);
 
   return (
-    <form action={action} className="mt-8 space-y-4" noValidate>
+    <form action={action} className="mt-5 space-y-4" noValidate>
       {template && <input type="hidden" name="template" value={template} />}
 
       {state?.error && (

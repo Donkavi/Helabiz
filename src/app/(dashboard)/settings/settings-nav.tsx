@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, Store, UserRound } from "lucide-react";
+import { CreditCard, Store, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/settings", label: "Business", icon: Store, exact: true },
   { href: "/settings/account", label: "Your account", icon: UserRound },
+  { href: "/settings/team", label: "Staff accounts", icon: Users },
   { href: "/settings/billing", label: "Plan & billing", icon: CreditCard },
 ];
 

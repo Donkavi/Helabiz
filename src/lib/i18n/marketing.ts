@@ -85,7 +85,16 @@ export type MarketingCopy = {
   plans: Record<string, { name: string; tagline: string; description: string; features: string[] }>;
 
   /** `choose` holds a {plan} placeholder: word order differs between the two. */
-  planCard: { mostPopular: string; free: string; perMonth: string; currentPlan: string; startFree: string; choose: string };
+  planCard: {
+    mostPopular: string;
+    free: string;
+    /** Sits under the price on the free card: "for 7 days". */
+    freeFor: string;
+    perMonth: string;
+    currentPlan: string;
+    startFree: string;
+    choose: string;
+  };
 
   limits: { unlimited: string };
 
@@ -167,7 +176,7 @@ const EN: MarketingCopy = {
       "Manage your products, orders, customers and profits — and build your own professional website without writing code.",
     startFree: "Start free",
     createWebsite: "Create a website",
-    reassurance: "Free forever plan · No card required · Live in under an hour",
+    reassurance: "7-day free trial · No card required · Live in under an hour",
 
     problem: {
       eyebrow: "The problem",
@@ -273,7 +282,7 @@ const EN: MarketingCopy = {
     pricing: {
       eyebrow: "Pricing",
       title: "Start free. Upgrade when it pays for itself.",
-      body: "Prices in Sri Lankan Rupees. Cancel any time — your website stays published on the free plan.",
+      body: "Prices in Sri Lankan Rupees. Every account starts with a 7-day free trial — pick a plan before it ends and your shop never closes.",
     },
 
     testimonials: {
@@ -324,7 +333,7 @@ const EN: MarketingCopy = {
         },
         {
           q: "Can I try it before paying?",
-          a: "Yes. The Free plan handles 20 orders and 50 products a month with a real published website, and it does not expire. Upgrade when you outgrow it.",
+          a: "Yes. Every account starts with a 7-day free trial — a real published website, 20 orders and 50 products, no card required. When the seven days are up, choose a plan to keep your shop open.",
         },
         {
           q: "Does my website work on phones?",
@@ -368,19 +377,20 @@ const EN: MarketingCopy = {
     faqTitle: "Billing questions",
     faqs: [
       { q: "Can I change plan later?", a: "Yes — upgrade or downgrade at any time. Changes apply from your next billing period and nothing is lost when you move." },
-      { q: "What happens if I go over the free plan limits?", a: "Your website stays online and existing orders are untouched. You will be asked to upgrade before adding beyond the limit." },
+      { q: "What happens when my free trial ends?", a: "Your dashboard and your website close until you choose a plan. Nothing is deleted — your products, orders and customers are all kept, and everything reopens the moment you upgrade." },
       { q: "How do I pay?", a: "Bank transfer today, with local card gateways being added. The billing system is built so a provider can be connected without any change to your store." },
-      { q: "Is there a contract?", a: "No. Plans are monthly and you can cancel whenever you like. Your site falls back to the free plan rather than going offline." },
+      { q: "Is there a contract?", a: "No. Plans are monthly and you can cancel whenever you like. Your shop stays open until the end of the period you have paid for, and nothing is deleted afterwards." },
     ],
-    cta: "Create your free account",
+    cta: "Start your 7-day free trial",
   },
 
   plans: {
     free: {
-      name: "Free",
-      tagline: "Get online this week",
-      description: "Everything you need to test the waters and take your first online orders.",
+      name: "Free trial",
+      tagline: "Seven days, no card",
+      description: "Everything you need to open a real shop online, free for 7 days. Choose a plan before it ends to stay open.",
       features: [
+        "Full access for 7 days",
         "20 orders per month",
         "50 products",
         "Basic website builder",
@@ -425,9 +435,10 @@ const EN: MarketingCopy = {
   planCard: {
     mostPopular: "Most popular",
     free: "Free",
+    freeFor: "for 7 days",
     perMonth: "/month",
     currentPlan: "Current plan",
-    startFree: "Start free",
+    startFree: "Start free trial",
     choose: "Choose {plan}",
   },
 
@@ -439,7 +450,7 @@ const EN: MarketingCopy = {
       "Eight designed website templates for Sri Lankan businesses — fashion, bakery, restaurant, beauty, electronics, photography and services.",
     eyebrow: "Templates",
     title: "Start from a design, not a blank page",
-    lede: "Every template arrives with its pages, sections, fonts and colours already set. Swap in your products and your words — change anything you like. Two are free forever; the rest come with any paid plan, and you can preview all of them before you decide.",
+    lede: "Every template arrives with its pages, sections, fonts and colours already set. Swap in your products and your words — change anything you like. Two come with the free trial; the rest with any paid plan, and you can preview all of them before you decide.",
     startFree: "Start free",
     seePricing: "See pricing",
     viewTemplate: "View template",
@@ -513,7 +524,7 @@ const SI: MarketingCopy = {
       "භාණ්ඩ, order, ගනුදෙනුකරුවෝ සහ ලාභය කළමනාකරණය කරන්න — ඒ එක්කම කේත ලියන්නේ නැතිව ඔබේම වෘත්තීය වෙබ් අඩවියක් හදාගන්න.",
     startFree: "නොමිලේ පටන් ගන්න",
     createWebsite: "වෙබ් අඩවියක් හදන්න",
-    reassurance: "සදාකාලිකව නොමිලේ plan එකක් · Card එකක් ඕන නෑ · පැයකට අඩුවෙන් online",
+    reassurance: "දින 7ක් නොමිලේ · Card එකක් ඕන නෑ · පැයකට අඩුවෙන් online",
 
     problem: {
       eyebrow: "ප්‍රශ්නය",
@@ -670,7 +681,7 @@ const SI: MarketingCopy = {
         },
         {
           q: "ගෙවන්න කලින් බලන්න පුළුවන්ද?",
-          a: "ඔව්. නොමිලේ plan එකෙන් මාසෙකට order 20ක් සහ භාණ්ඩ 50ක් සමඟ ඇත්ත publish වුණු වෙබ් අඩවියක් ලැබෙනවා, ඒක කල් ඉකුත් වෙන්නේ නෑ. ලොකු වුණාම upgrade කරන්න.",
+          a: "ඔව්. හැම account එකක්ම පටන් ගන්නේ දින 7ක නොමිලේ අත්හදා බැලීමකින් — ඇත්ත publish වුණු වෙබ් අඩවියක්, order 20ක්, භාණ්ඩ 50ක්, card එකක් ඕන නෑ. දින 7 ඉවර වුණාම සාප්පුව විවෘතව තියාගන්න plan එකක් තෝරන්න.",
         },
         {
           q: "මගේ වෙබ් අඩවිය phone එකේ හරියට වැඩ කරනවද?",
@@ -693,7 +704,7 @@ const SI: MarketingCopy = {
       "ශ්‍රී ලංකා රුපියල් වලින් සරල මිල ගණන්. ඇත්ත publish වුණු වෙබ් අඩවියක් එක්ක නොමිලේ පටන් ගන්න, සාප්පුව ලොකු වුණාම upgrade කරන්න.",
     eyebrow: "මිල ගණන්",
     title: "ශ්‍රී ලාංකික කුඩා ව්‍යාපාරයකට ගැලපෙන මිලක්",
-    lede: "ඇත්ත, publish වුණු වෙබ් අඩවියක් එක්ක නොමිලේ පටන් ගන්න. ගෙවන එක වටින්න පටන් ගන්න මාසේ upgrade කරන්න.",
+    lede: "දින 7ක් නොමිලේ, ඇත්ත publish වුණු වෙබ් අඩවියක් එක්ක පටන් ගන්න. දින 7 ඉවර වෙන්න කලින් ගැලපෙන plan එක තෝරන්න.",
     compare: "Plan සංසන්දනය",
     feature: "විශේෂාංගය",
     popular: "ජනප්‍රියයි",
@@ -714,19 +725,20 @@ const SI: MarketingCopy = {
     faqTitle: "ගෙවීම් ගැන ප්‍රශ්න",
     faqs: [
       { q: "පස්සේ plan එක වෙනස් කරන්න පුළුවන්ද?", a: "ඔව් — ඕන වෙලාවක ඉහළට හෝ පහළට යන්න පුළුවන්. වෙනස්කම් ඊළඟ ගෙවීම් කාලයේ ඉඳන් බලපානවා, මාරු වෙනකොට කිසිම දෙයක් නැති වෙන්නේ නෑ." },
-      { q: "නොමිලේ plan එකේ සීමාව ඉක්මවුවොත් මොකද වෙන්නේ?", a: "ඔබේ වෙබ් අඩවිය online තියෙනවා, දැනට තියෙන order වලට කිසි දෙයක් වෙන්නේ නෑ. සීමාවෙන් එහාට එකතු කරන්න කලින් upgrade කරන්න කියලා අහනවා." },
+      { q: "නොමිලේ අත්හදා බැලීම ඉවර වුණාම මොකද වෙන්නේ?", a: "Plan එකක් තෝරනකම් ඔබේ dashboard එකයි වෙබ් අඩවියයි වහනවා. කිසිම දෙයක් මකන්නේ නෑ — භාණ්ඩ, order, ගනුදෙනුකරුවෝ හැම දෙයක්ම තියෙනවා, upgrade කරපු ගමන් ආපහු විවෘත වෙනවා." },
       { q: "මම ගෙවන්නේ කොහොමද?", a: "දැනට bank transfer, local card gateway එකතු කරමින් තියෙනවා. ඔබේ සාප්පුවට කිසිම වෙනසක් නොකර provider කෙනෙක් සම්බන්ධ කරන්න පුළුවන් විදිහට billing එක හදලා තියෙන්නේ." },
-      { q: "ගිවිසුමක් තියෙනවද?", a: "නෑ. Plan මාසිකයි, ඕන වෙලාවක නවත්තන්න පුළුවන්. ඔබේ අඩවිය offline යනවා වෙනුවට නොමිලේ plan එකට වැටෙනවා." },
+      { q: "ගිවිසුමක් තියෙනවද?", a: "නෑ. Plan මාසිකයි, ඕන වෙලාවක නවත්තන්න පුළුවන්. ගෙවපු කාලය ඉවර වෙනකම් සාප්පුව විවෘතව තියෙනවා, ඊට පස්සෙත් කිසිම දෙයක් මකන්නේ නෑ." },
     ],
-    cta: "නොමිලේ account එකක් හදන්න",
+    cta: "දින 7ක නොමිලේ අත්හදා බැලීම පටන් ගන්න",
   },
 
   plans: {
     free: {
-      name: "නොමිලේ",
-      tagline: "මේ සතියේම online වෙන්න",
-      description: "පොඩ්ඩක් බලන්නත්, පළමු online order ටික ගන්නත් ඕන හැම දෙයක්ම.",
+      name: "නොමිලේ අත්හදා බැලීම",
+      tagline: "දින 7ක්, card එකක් ඕන නෑ",
+      description: "ඇත්ත online සාප්පුවක් පටන් ගන්න ඕන හැම දෙයක්ම, දින 7ක් නොමිලේ. ඉවර වෙන්න කලින් plan එකක් තෝරලා විවෘතව තියාගන්න.",
       features: [
+        "දින 7ක් සම්පූර්ණ පිවිසුම",
         "මාසෙකට order 20ක්",
         "භාණ්ඩ 50ක්",
         "මූලික වෙබ් අඩවි නිර්මාණකරු",
@@ -771,9 +783,10 @@ const SI: MarketingCopy = {
   planCard: {
     mostPopular: "වැඩියෙන්ම ජනප්‍රිය",
     free: "නොමිලේ",
+    freeFor: "දින 7කට",
     perMonth: "/මාසෙට",
     currentPlan: "දැන් තියෙන plan එක",
-    startFree: "නොමිලේ පටන් ගන්න",
+    startFree: "නොමිලේ අත්හදා බලන්න",
     choose: "{plan} තෝරන්න",
   },
 

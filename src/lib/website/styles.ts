@@ -4,6 +4,8 @@ import { fontStack } from "./themes";
 export const VIEWPORT_WIDTH: Record<Viewport, number> = { desktop: 1440, tablet: 834, mobile: 390 };
 export const TABLET_BREAKPOINT = 1024;
 export const MOBILE_BREAKPOINT = 640;
+/** Where the desktop navigation gives way to the burger. */
+export const NAV_BREAKPOINT = 820;
 
 const MAX_WIDTHS = { sm: 640, md: 880, lg: 0, xl: 1320, full: 0 } as const;
 
@@ -161,6 +163,19 @@ export function buttonClassFor(theme: ThemeTokens) {
 }
 
 /** Shared base stylesheet for every rendered website (editor and public). */
+/**
+ * The responsive rules, kept as plain declarations rather than only inside
+ * media queries.
+ *
+ * The editor simulates a device inside a fixed-width frame, so a viewport
+ * media query measures the builder window and never fires — a phone preview
+ * would keep the desktop grid. Holding the declarations here lets the public
+ * site wrap them in media queries and the editor replay them unconditionally,
+ * from one definition, so the preview cannot drift from the real thing.
+ */
+const TABLET_RULES = `.w-grid{grid-template-columns:repeat(min(var(--sec-cols,3),2),minmax(0,1fr));}`;
+const MOBILE_RULES = `.w-grid{grid-template-columns:minmax(0,1fr);}.w-in{padding-inline:18px;}`;
+
 export const WEBSITE_BASE_CSS = `
 .w-root{color:var(--w-text);background:var(--w-bg);font-family:var(--w-body-font);}
 .w-root h1,.w-root h2,.w-root h3,.w-root h4{font-family:var(--w-heading-font);letter-spacing:-0.02em;line-height:1.12;margin:0;}
@@ -187,8 +202,8 @@ export const WEBSITE_BASE_CSS = `
 .w-overlay{position:absolute;inset:0;background:#000;opacity:var(--sec-overlay,0);z-index:0;}
 .w-img{display:block;width:100%;height:100%;object-fit:cover;}
 .w-sec a{color:inherit;}
-@media (max-width:1024px){.w-grid{grid-template-columns:repeat(min(var(--sec-cols,3),2),minmax(0,1fr));}}
-@media (max-width:640px){.w-grid{grid-template-columns:minmax(0,1fr);}.w-in{padding-inline:18px;}}
+@media (max-width:${TABLET_BREAKPOINT}px){${TABLET_RULES}}
+@media (max-width:${MOBILE_BREAKPOINT}px){${MOBILE_RULES}}
 [data-anim="fade-up"]{animation:w-fade-up .6s cubic-bezier(.22,1,.36,1) both;}
 [data-anim="fade"]{animation:w-fade .6s ease both;}
 [data-anim="zoom"]{animation:w-zoom .5s cubic-bezier(.22,1,.36,1) both;}
@@ -197,3 +212,26 @@ export const WEBSITE_BASE_CSS = `
 @keyframes w-zoom{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){[data-anim]{animation:none!important}}
 `;
+
+/** The nav rules that swap the desktop menu for the burger. */
+export const NAV_RULES = `.w-nav-desktop{display:none}.w-burger{display:inline-flex!important}.w-hero-split{gap:28px!important}`;
+
+/**
+ * What a real browser would apply at the width the editor is simulating.
+ *
+ * Media queries measure the builder window, not the device frame, so a phone
+ * preview would otherwise show the desktop layout squeezed into 390px — four
+ * columns where a phone gets one. This replays the very same declarations the
+ * media queries hold, unconditionally, narrowest last so the cascade matches
+ * a browser resizing for real.
+ *
+ * Returns nothing for desktop, where the frame and the breakpoints agree.
+ */
+export function viewportOverrideCss(viewport: Viewport): string {
+  const width = VIEWPORT_WIDTH[viewport];
+  const out: string[] = [];
+  if (width <= TABLET_BREAKPOINT) out.push(TABLET_RULES);
+  if (width <= NAV_BREAKPOINT) out.push(NAV_RULES);
+  if (width <= MOBILE_BREAKPOINT) out.push(MOBILE_RULES);
+  return out.join("\n");
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, MessageCircle, Package } from "lucide-react";
+import { CheckCircle2, MapPin, MessageCircle, Package } from "lucide-react";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Order } from "@/models/Order";
 import { loadPublishedSite } from "@/lib/website/load-site";
@@ -166,6 +166,14 @@ export default async function OrderConfirmationPage({
             <Package size={15} />
             Keep shopping
           </SiteLink>
+          {/* Only where the shop pays for tracking; otherwise the page it
+              points at does not exist. */}
+          {site.addons.includes("order_tracking") && (
+            <SiteLink ctx={site.ctx} href="/track" className="w-btn w-btn--outline">
+              <MapPin size={15} />
+              Track this order
+            </SiteLink>
+          )}
           {waHref && (
             <a href={waHref} target="_blank" rel="noopener noreferrer" className="w-btn w-btn--outline">
               <MessageCircle size={15} />

@@ -29,7 +29,9 @@ import { siteUrlFor, siteDisplayUrl } from "@/lib/website/urls";
 import { getTheme } from "@/lib/website/themes";
 import { ALL_TEMPLATES } from "@/lib/website/templates";
 import { TemplateThumbnail } from "@/components/website/template-thumbnail";
+import { activeAddons, addonStatuses } from "@/lib/addons";
 import { TemplateChooser } from "./template-chooser";
+import { WebsiteAddons } from "./website-addons";
 import { ChangeTemplateButton } from "./change-template-button";
 import { PublishControls } from "./publish-controls";
 
@@ -53,7 +55,11 @@ export default async function WebsiteOverviewPage() {
           title="Website"
           description="Build a professional website for your business — no code, no developer."
         />
-        <TemplateChooser productCount={productCount} canUsePremium={canUsePremium} />
+        <TemplateChooser
+          productCount={productCount}
+          canUsePremium={canUsePremium}
+          activeAddons={[...activeAddons(business)]}
+        />
       </div>
     );
   }
@@ -179,6 +185,8 @@ export default async function WebsiteOverviewPage() {
           body="Web address, SEO, cart and checkout options."
         />
       </div>
+
+      <WebsiteAddons statuses={addonStatuses(business)} trackUrl={`${liveUrl}/track`} />
 
       {/* Template */}
       <Card>

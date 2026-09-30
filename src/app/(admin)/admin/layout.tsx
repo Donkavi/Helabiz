@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Building2, LayoutDashboard, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, Building2, LayoutDashboard, Receipt, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/permissions/admin";
 import { Badge } from "@/components/ui/badge";
 import { LangProvider } from "@/lib/i18n/provider";
@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 export const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/businesses", label: "Businesses", icon: Building2 },
+  { href: "/admin/payments", label: "Payments", icon: Receipt },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/audit", label: "Audit log", icon: ScrollText },
 ];

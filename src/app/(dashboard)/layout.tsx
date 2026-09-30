@@ -10,6 +10,8 @@ import { siteUrlFor } from "@/lib/website/urls";
 import { getSuperAdmin } from "@/lib/permissions/admin";
 import { getLang } from "@/lib/i18n/server";
 import { LangProvider } from "@/lib/i18n/provider";
+import { AccessBanner } from "@/components/dashboard/access-banner";
+import { accessInfo } from "@/lib/access";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, business, businessId } = await requireBusiness();
@@ -44,6 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }));
 
   const siteUrl = website?.status === "published" ? siteUrlFor(business.slug) : null;
+  const access = accessInfo(business);
 
   return (
     <LangProvider lang={lang}>
@@ -77,6 +80,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             createdAt: String(n.createdAt),
           }))}
         />
+        <AccessBanner info={access} planName={plan.name} />
         <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
           <div className="mx-auto w-full max-w-[1320px]">{children}</div>
         </main>

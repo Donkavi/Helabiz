@@ -68,3 +68,13 @@ export async function signInAction(_prev: AuthActionState, formData: FormData): 
   }
   return null;
 }
+
+/**
+ * Hands off to Google. `signIn` throws a redirect on the way out and Auth.js
+ * refuses a `redirectTo` pointing off-origin, so there is nothing to catch and
+ * nothing to validate here. Failures come back as `/sign-in?error=…`.
+ */
+export async function signInWithGoogleAction(formData: FormData) {
+  const redirectTo = String(formData.get("redirectTo") ?? "/dashboard") || "/dashboard";
+  await signIn("google", { redirectTo });
+}
