@@ -7,7 +7,16 @@
  * custom domains can be added later by extending the middleware lookup only.
  */
 export const SITE_DOMAIN = process.env.NEXT_PUBLIC_SITE_DOMAIN || "helabiz.lk";
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+/**
+ * Local vs production is decided by the build, not by `NEXT_PUBLIC_APP_URL`.
+ * That value is inlined at build time, so a `.env` with `localhost` in it that
+ * reaches the production build would otherwise point every shop link there.
+ */
+const isDev = process.env.NODE_ENV !== "production";
+
+export const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || (isDev ? "http://localhost:3000" : `https://${SITE_DOMAIN}`);
 
 /** The path this app serves a business website from. */
 export function sitePath(slug: string, path = "") {
@@ -17,8 +26,7 @@ export function sitePath(slug: string, path = "") {
 
 /** The address shown to the user — a real subdomain in production, a path locally. */
 export function siteUrlFor(slug: string, path = "") {
-  const isLocal = APP_URL.includes("localhost") || APP_URL.includes("127.0.0.1");
-  if (isLocal) return `${APP_URL}${sitePath(slug, path)}`;
+  if (isDev) return `${APP_URL}${sitePath(slug, path)}`;
   const suffix = path && path !== "/" ? (path.startsWith("/") ? path : `/${path}`) : "";
   return `https://${slug}.${SITE_DOMAIN}${suffix}`;
 }

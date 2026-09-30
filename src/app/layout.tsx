@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { APP_URL } from "@/lib/website/urls";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
+  metadataBase: new URL(APP_URL),
   title: {
     default: "Helabiz — Your business. Your website. One simple platform.",
     template: "%s · Helabiz",
