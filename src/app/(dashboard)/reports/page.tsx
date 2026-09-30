@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RevenueChart, ProfitChart, DonutChart } from "@/components/charts/revenue-chart";
 import { formatCurrency, formatNumber, percentChange } from "@/lib/utils";
 import { dailySeries, daysAgo, summarise, topProducts, websiteMetrics } from "@/services/metrics-service";
+import { productSummary } from "@/lib/products";
 import { ReportToolbar } from "./report-toolbar";
 
 export const metadata: Metadata = { title: "Reports" };
@@ -50,17 +51,23 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         },
       },
     ]),
-    Product.aggregate<{ _id: null; cost: number; retail: number; units: number }>([
-      { $match: { businessId: oid, status: { $ne: "archived" }, trackInventory: true } },
-      {
-        $group: {
-          _id: null,
-          cost: { $sum: { $multiply: ["$stock", "$costPrice"] } },
-          retail: { $sum: { $multiply: ["$stock", "$price"] } },
-          units: { $sum: "$stock" },
-        },
-      },
-    ]),
+    // Summed per variant where a product has them, since each carries its own cost and price.
+    Product.find({ businessId: oid, status: { $ne: "archived" }, trackInventory: true })
+      .select("price costPrice stock variants")
+      .lean()
+      .then((products) => [
+        products.reduce(
+          (total, product) => {
+            const summary = productSummary(product);
+            return {
+              cost: total.cost + summary.stockValue,
+              retail: total.retail + summary.retailValue,
+              units: total.units + summary.stock,
+            };
+          },
+          { cost: 0, retail: 0, units: 0 },
+        ),
+      ]),
     websiteMetrics(businessId, from),
   ]);
 

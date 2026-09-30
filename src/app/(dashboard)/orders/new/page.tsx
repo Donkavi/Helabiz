@@ -3,6 +3,7 @@ import { requireBusiness } from "@/lib/permissions";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Product } from "@/models/Product";
 import { Customer } from "@/models/Customer";
+import { variantPricing } from "@/lib/products";
 import { OrderComposer } from "./order-composer";
 
 export const metadata: Metadata = { title: "New order" };
@@ -31,8 +32,7 @@ export default async function NewOrderPage() {
         variants: (p.variants ?? []).map((v) => ({
           id: String(v._id),
           name: v.name,
-          price: v.price ?? undefined,
-          stock: v.stock ?? 0,
+          ...variantPricing(p, v),
         })),
       }))}
       customers={serialize(customers).map((c) => ({

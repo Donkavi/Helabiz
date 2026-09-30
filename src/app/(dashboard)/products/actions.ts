@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Types } from "mongoose";
 import { requireBusiness } from "@/lib/permissions";
 import { connectDB } from "@/lib/db/mongoose";
 import { Product } from "@/models/Product";
@@ -10,6 +11,7 @@ import { productSchema, categorySchema, stockAdjustmentSchema } from "@/lib/vali
 import { fieldErrorsFrom, type ActionState } from "@/lib/validations/errors";
 import { assertWithinLimit, LimitError } from "@/services/limits-service";
 import { uniqueSlug } from "@/services/business-service";
+import { productSummary } from "@/lib/products";
 
 function parseProductForm(formData: FormData) {
   const json = formData.get("payload");
@@ -41,6 +43,16 @@ export async function saveProductAction(_prev: ActionState<{ id: string }>, form
     return Boolean(hit);
   });
 
+  // New variants get their id here so their opening stock can be logged against it.
+  const variants = data.variants.map((v) => ({
+    ...v,
+    _id: v._id || new Types.ObjectId().toString(),
+    compareAtPrice: v.compareAtPrice || undefined,
+  }));
+  // A product with variants is priced and stocked by them alone; its own
+  // fields become the summary lists and reports read.
+  const summary = productSummary({ ...data, variants });
+
   const payload = {
     businessId,
     name: data.name,
@@ -48,10 +60,10 @@ export async function saveProductAction(_prev: ActionState<{ id: string }>, form
     description: data.description || undefined,
     shortDescription: data.shortDescription || undefined,
     sku: data.sku || undefined,
-    price: data.price,
-    compareAtPrice: data.compareAtPrice || undefined,
-    costPrice: data.costPrice,
-    stock: data.stock,
+    price: summary.price,
+    compareAtPrice: summary.compareAtPrice || undefined,
+    costPrice: summary.costPrice,
+    stock: summary.stock,
     lowStockThreshold: data.lowStockThreshold,
     trackInventory: data.trackInventory,
     images: data.images,
@@ -59,43 +71,51 @@ export async function saveProductAction(_prev: ActionState<{ id: string }>, form
     tags: data.tags,
     status: data.status,
     featured: data.featured,
-    variants: data.variants,
+    variants,
     seo: { title: data.seoTitle || undefined, description: data.seoDescription || undefined },
   };
 
   let productId = id;
+  let before: { stock: number; variants: Map<string, number> } | null = null;
   if (id) {
-    const before = await Product.findOne({ _id: id, businessId }).select("stock name").lean();
-    await Product.updateOne({ _id: id, businessId }, { $set: payload });
-
-    // A manual stock edit is still an inventory movement worth recording.
-    if (before && before.stock !== data.stock) {
-      await InventoryMovement.create({
-        businessId,
-        productId: id,
-        productName: data.name,
-        type: "adjustment",
-        quantity: data.stock - (before.stock ?? 0),
-        stockBefore: before.stock ?? 0,
-        stockAfter: data.stock,
-        note: "Edited on the product page",
-      });
+    const existing = await Product.findOne({ _id: id, businessId }).select("stock variants").lean();
+    if (existing) {
+      before = {
+        stock: existing.stock ?? 0,
+        variants: new Map((existing.variants ?? []).map((v) => [String(v._id), v.stock ?? 0])),
+      };
     }
+    await Product.updateOne({ _id: id, businessId }, { $set: payload });
   } else {
     const created = await Product.create(payload);
     productId = String(created._id);
-    if (data.stock > 0) {
-      await InventoryMovement.create({
-        businessId,
-        productId: created._id,
-        productName: data.name,
-        type: "restock",
-        quantity: data.stock,
-        stockBefore: 0,
-        stockAfter: data.stock,
-        note: "Opening stock",
-      });
-    }
+  }
+
+  // A manual stock edit is still an inventory movement worth recording, one
+  // per variant when the product has them.
+  const changes = variants.length
+    ? variants.map((v) => ({
+        variantId: v._id,
+        variantName: v.name,
+        from: before?.variants.get(v._id) ?? 0,
+        to: v.stock,
+      }))
+    : [{ variantId: undefined, variantName: undefined, from: before?.stock ?? 0, to: data.stock }];
+
+  for (const change of changes) {
+    if (change.from === change.to) continue;
+    await InventoryMovement.create({
+      businessId,
+      productId,
+      variantId: change.variantId,
+      variantName: change.variantName,
+      productName: data.name,
+      type: before ? "adjustment" : "restock",
+      quantity: change.to - change.from,
+      stockBefore: change.from,
+      stockAfter: change.to,
+      note: before ? "Edited on the product page" : "Opening stock",
+    });
   }
 
   revalidatePath("/products");
@@ -171,20 +191,34 @@ export async function adjustStockAction(_prev: ActionState, formData: FormData):
   const product = await Product.findOne({ _id: parsed.data.productId, businessId });
   if (!product) return { ok: false, error: "Product not found" };
 
-  const before = product.stock ?? 0;
+  // A product with variants keeps its stock on them, so it is adjusted one variant at a time.
+  const variant = parsed.data.variantId
+    ? product.variants.find((v) => String(v._id) === parsed.data.variantId)
+    : undefined;
+  if (product.variants.length && !variant) return { ok: false, error: "Choose which variant to adjust" };
+
+  const before = (variant ? variant.stock : product.stock) ?? 0;
   // Damage always reduces stock; the other types follow the sign the user typed.
   const delta = parsed.data.type === "damage" ? -Math.abs(parsed.data.quantity) : parsed.data.quantity;
-  product.stock = Math.max(0, before + delta);
+  const after = Math.max(0, before + delta);
+  if (variant) {
+    variant.stock = after;
+    product.stock = productSummary(product).stock;
+  } else {
+    product.stock = after;
+  }
   await product.save();
 
   await InventoryMovement.create({
     businessId,
     productId: product._id,
+    variantId: variant ? String(variant._id) : undefined,
+    variantName: variant?.name,
     productName: product.name,
     type: parsed.data.type,
-    quantity: delta,
+    quantity: after - before,
     stockBefore: before,
-    stockAfter: product.stock,
+    stockAfter: after,
     note: parsed.data.note || undefined,
   });
 

@@ -5,6 +5,9 @@ const VariantSchema = new Schema(
     name: { type: String, required: true },
     sku: String,
     price: Number,
+    compareAtPrice: Number,
+    // No default: a variant saved before it had its own cost falls back to the product's.
+    costPrice: Number,
     stock: { type: Number, default: 0 },
     options: { type: Map, of: String },
   },

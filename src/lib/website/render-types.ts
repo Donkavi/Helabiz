@@ -15,8 +15,11 @@ export type PublicProduct = {
   createdAt?: string;
   shortDescription?: string;
   description?: string;
-  variants?: { id: string; name: string; price?: number; stock: number }[];
+  /** When present, each variant carries the real price and stock; the fields above summarise them. */
+  variants?: PublicVariant[];
 };
+
+export type PublicVariant = { id: string; name: string; price: number; compareAtPrice?: number; stock: number };
 
 export type PublicCategory = { id: string; name: string; slug: string; image?: string };
 

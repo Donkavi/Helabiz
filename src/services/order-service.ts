@@ -7,6 +7,7 @@ import { InventoryMovement } from "@/models/InventoryMovement";
 import { Notification } from "@/models/Notification";
 import { sendOrderPlacedEmail, sendOrderStatusEmail } from "@/services/order-mail";
 import { REVENUE_STATUSES } from "./metrics-service";
+import { productSummary } from "@/lib/products";
 import type { OrderSource, OrderStatus, PaymentMethod, PaymentStatus } from "@/types";
 
 export type OrderLineInput = {
@@ -105,14 +106,20 @@ export async function applyInventory(order: HydratedDocument<OrderDoc>, directio
     const product = await Product.findOne({ _id: item.productId, businessId: order.businessId });
     if (!product || !product.trackInventory) continue;
 
-    const before = product.stock ?? 0;
     const delta = direction * item.quantity;
-    product.stock = Math.max(0, before + delta);
     product.sold = Math.max(0, (product.sold ?? 0) - delta);
 
-    if (item.variantId && product.variants?.length) {
-      const variant = product.variants.find((v) => String(v._id) === item.variantId);
-      if (variant) variant.stock = Math.max(0, (variant.stock ?? 0) + delta);
+    // A variant's stock is the real count; the product's is then just their total.
+    const variant = item.variantId
+      ? product.variants?.find((v) => String(v._id) === item.variantId)
+      : undefined;
+    const before = (variant ? variant.stock : product.stock) ?? 0;
+    const after = Math.max(0, before + delta);
+    if (variant) {
+      variant.stock = after;
+      product.stock = productSummary(product).stock;
+    } else {
+      product.stock = after;
     }
     await product.save();
 
@@ -120,11 +127,12 @@ export async function applyInventory(order: HydratedDocument<OrderDoc>, directio
       businessId: order.businessId,
       productId: product._id,
       variantId: item.variantId,
+      variantName: variant?.name ?? item.variantName,
       productName: product.name,
       type: direction === -1 ? "sale" : "return",
-      quantity: Math.abs(item.quantity),
+      quantity: after - before,
       stockBefore: before,
-      stockAfter: product.stock,
+      stockAfter: after,
       reference: order.orderNumber,
       orderId: order._id,
     });

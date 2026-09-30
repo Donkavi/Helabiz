@@ -24,7 +24,9 @@ export function ProductDetail({
   const router = useRouter();
   const cart = useCart();
   const [imageIndex, setImageIndex] = React.useState(0);
-  const [variantId, setVariantId] = React.useState(product.variants?.[0]?.id);
+  const [variantId, setVariantId] = React.useState(
+    () => (product.variants?.find((v) => !product.trackInventory || v.stock > 0) ?? product.variants?.[0])?.id,
+  );
   const [quantity, setQuantity] = React.useState(1);
   const [added, setAdded] = React.useState(false);
 
@@ -40,11 +42,13 @@ export function ProductDetail({
     });
   }, [ctx.businessId, ctx.websiteId, product.id, product.name, product.slug]);
 
+  // With variants, every figure comes from the chosen one — never mixed with the product's.
   const variant = product.variants?.find((v) => v.id === variantId);
-  const price = variant?.price ?? product.price;
+  const price = variant ? variant.price : product.price;
+  const compareAtPrice = variant ? variant.compareAtPrice : product.compareAtPrice;
   const stock = variant ? variant.stock : product.stock;
   const soldOut = product.trackInventory && stock <= 0;
-  const onSale = !!product.compareAtPrice && product.compareAtPrice > price;
+  const onSale = !!compareAtPrice && compareAtPrice > price;
   const images = product.images?.length ? product.images : [""];
 
   const addToCart = () => {
@@ -55,7 +59,7 @@ export function ProductDetail({
       name: product.name,
       variantName: variant?.name,
       price,
-      compareAtPrice: product.compareAtPrice,
+      compareAtPrice,
       image: product.images?.[0],
       slug: product.slug,
       stock: product.trackInventory ? stock : undefined,
@@ -147,7 +151,7 @@ export function ProductDetail({
                 <span style={{ fontSize: 26, fontWeight: 600 }}>{formatCurrency(price, { decimals: false })}</span>
                 {onSale && (
                   <span className="w-muted" style={{ fontSize: 17, textDecoration: "line-through" }}>
-                    {formatCurrency(product.compareAtPrice!, { decimals: false })}
+                    {formatCurrency(compareAtPrice!, { decimals: false })}
                   </span>
                 )}
                 {onSale && (
@@ -161,7 +165,7 @@ export function ProductDetail({
                       borderRadius: 999,
                     }}
                   >
-                    Save {Math.round((1 - price / product.compareAtPrice!) * 100)}%
+                    Save {Math.round((1 - price / compareAtPrice!) * 100)}%
                   </span>
                 )}
               </div>
@@ -204,7 +208,10 @@ export function ProductDetail({
                         <button
                           key={option.id}
                           type="button"
-                          onClick={() => setVariantId(option.id)}
+                          onClick={() => {
+                            setVariantId(option.id);
+                            setQuantity(1);
+                          }}
                           disabled={optionSoldOut}
                           aria-pressed={active}
                           style={{

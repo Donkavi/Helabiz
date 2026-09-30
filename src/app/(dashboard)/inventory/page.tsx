@@ -12,6 +12,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, relativeTime } from "@/lib/utils";
+import { productSummary, variantPricing } from "@/lib/products";
 import { InventoryTable } from "./inventory-table";
 
 export const metadata: Metadata = { title: "Inventory" };
@@ -36,19 +37,32 @@ export default async function InventoryPage() {
     InventoryMovement.find({ businessId }).sort({ createdAt: -1 }).limit(30).lean(),
   ]);
 
-  const rows = serialize(products).map((p) => ({
-    id: String(p._id),
-    name: p.name,
-    sku: p.sku ?? "",
-    image: p.images?.[0],
-    stock: p.stock ?? 0,
-    lowStockThreshold: p.lowStockThreshold ?? 5,
-    costPrice: p.costPrice ?? 0,
-    price: p.price,
-  }));
+  const rows = serialize(products).map((p) => {
+    const summary = productSummary(p);
+    return {
+      id: String(p._id),
+      name: p.name,
+      sku: p.sku ?? "",
+      image: p.images?.[0],
+      stock: summary.stock,
+      lowStockThreshold: p.lowStockThreshold ?? 5,
+      stockValue: summary.stockValue,
+      retailValue: summary.retailValue,
+      variants: (p.variants ?? []).map((v) => {
+        const pricing = variantPricing(p, v);
+        return {
+          id: String(v._id),
+          name: v.name,
+          sku: v.sku ?? "",
+          stock: pricing.stock,
+          stockValue: pricing.stock * pricing.costPrice,
+        };
+      }),
+    };
+  });
 
-  const stockValue = rows.reduce((sum, p) => sum + p.stock * p.costPrice, 0);
-  const retailValue = rows.reduce((sum, p) => sum + p.stock * p.price, 0);
+  const stockValue = rows.reduce((sum, p) => sum + p.stockValue, 0);
+  const retailValue = rows.reduce((sum, p) => sum + p.retailValue, 0);
   const lowCount = rows.filter((p) => p.stock > 0 && p.stock <= p.lowStockThreshold).length;
   const outCount = rows.filter((p) => p.stock <= 0).length;
 
@@ -111,7 +125,12 @@ export default async function InventoryPage() {
                     {serialize(movements).map((movement) => (
                       <li key={String(movement._id)} className="flex items-center gap-3 py-2.5">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-medium">{movement.productName}</p>
+                          <p className="truncate text-[13px] font-medium">
+                            {movement.productName}
+                            {movement.variantName && (
+                              <span className="font-normal text-muted-foreground"> · {movement.variantName}</span>
+                            )}
+                          </p>
                           <p className="text-[12px] text-muted-foreground">
                             {MOVEMENT_LABELS[movement.type] ?? movement.type}
                             {movement.reference && ` · ${movement.reference}`} ·{" "}

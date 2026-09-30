@@ -34,9 +34,19 @@ export type ProductFormValues = {
   tags: string[];
   status: string;
   featured: boolean;
-  variants: { _id?: string; name: string; sku: string; price: number | string; stock: number | string }[];
+  variants: VariantFormValues[];
   seoTitle: string;
   seoDescription: string;
+};
+
+export type VariantFormValues = {
+  _id?: string;
+  name: string;
+  sku: string;
+  price: number | string;
+  compareAtPrice: number | string;
+  costPrice: number | string;
+  stock: number | string;
 };
 
 export const EMPTY_PRODUCT: ProductFormValues = {
@@ -74,17 +84,47 @@ export function ProductForm({
   const [pending, startTransition] = React.useTransition();
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [tagDraft, setTagDraft] = React.useState("");
+  // Turning variants off keeps them in state, so switching back loses nothing
+  // until the product is saved.
+  const [useVariants, setUseVariants] = React.useState(initial.variants.length > 0);
 
   const set = <K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) =>
     setValues((current) => ({ ...current, [key]: value }));
 
+  const setVariant = (index: number, patch: Partial<VariantFormValues>) =>
+    set("variants", values.variants.map((v, i) => (i === index ? { ...v, ...patch } : v)));
+
+  const toggleVariants = (on: boolean) => {
+    setUseVariants(on);
+    // The first variant starts from the product's own figures, so nothing typed is lost.
+    if (on && values.variants.length === 0) {
+      set("variants", [
+        {
+          name: "",
+          sku: values.sku,
+          price: values.price,
+          compareAtPrice: values.compareAtPrice,
+          costPrice: values.costPrice,
+          stock: values.stock,
+        },
+      ]);
+    }
+  };
+
   const price = Number(values.price) || 0;
   const cost = Number(values.costPrice) || 0;
   const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const variantPrices = values.variants.map((v) => Number(v.price) || 0);
+  const variantStock = values.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     setErrors({});
+
+    if (useVariants && values.variants.length === 0) {
+      toast.error("Add at least one variant, or turn variants off");
+      return;
+    }
 
     const payload = {
       ...values,
@@ -94,11 +134,15 @@ export function ProductForm({
       costPrice: Number(values.costPrice) || 0,
       stock: Number(values.stock) || 0,
       lowStockThreshold: Number(values.lowStockThreshold) || 0,
-      variants: values.variants.map((v) => ({
-        ...v,
-        price: v.price === "" ? undefined : Number(v.price),
-        stock: Number(v.stock) || 0,
-      })),
+      variants: useVariants
+        ? values.variants.map((v) => ({
+            ...v,
+            price: Number(v.price) || 0,
+            compareAtPrice: v.compareAtPrice === "" ? undefined : Number(v.compareAtPrice),
+            costPrice: Number(v.costPrice) || 0,
+            stock: Number(v.stock) || 0,
+          }))
+        : [],
     };
 
     const data = new FormData();
@@ -250,71 +294,101 @@ export function ProductForm({
 
           <Card>
             <CardHeader>
-              <CardTitle>Variants</CardTitle>
-              <p className="text-[12.5px] text-muted-foreground">
-                Optional. Use for sizes, colours or flavours that have their own stock.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-0">
-              {values.variants.map((variant, index) => (
-                <div key={index} className="grid gap-2 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_auto]">
-                  <Input
-                    value={variant.name}
-                    onChange={(e) =>
-                      set("variants", values.variants.map((v, i) => (i === index ? { ...v, name: e.target.value } : v)))
-                    }
-                    placeholder="Medium / Black"
-                    aria-label="Variant name"
-                  />
-                  <Input
-                    value={variant.sku}
-                    onChange={(e) =>
-                      set("variants", values.variants.map((v, i) => (i === index ? { ...v, sku: e.target.value } : v)))
-                    }
-                    placeholder="SKU"
-                    aria-label="Variant SKU"
-                  />
-                  <Input
-                    value={variant.price}
-                    onChange={(e) =>
-                      set("variants", values.variants.map((v, i) => (i === index ? { ...v, price: e.target.value } : v)))
-                    }
-                    type="number"
-                    min={0}
-                    placeholder="Price"
-                    aria-label="Variant price"
-                  />
-                  <Input
-                    value={variant.stock}
-                    onChange={(e) =>
-                      set("variants", values.variants.map((v, i) => (i === index ? { ...v, stock: e.target.value } : v)))
-                    }
-                    type="number"
-                    min={0}
-                    placeholder="Stock"
-                    aria-label="Variant stock"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => set("variants", values.variants.filter((_, i) => i !== index))}
-                    aria-label="Remove variant"
-                  >
-                    <Trash2 className="text-destructive" />
-                  </Button>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Variants</CardTitle>
+                  <p className="text-[12.5px] text-muted-foreground">
+                    For sizes, colours or flavours. Each variant has its own price and stock.
+                  </p>
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => set("variants", [...values.variants, { name: "", sku: "", price: "", stock: 0 }])}
-              >
-                <Plus className="size-3.5" />
-                Add variant
-              </Button>
-            </CardContent>
+                <Switch checked={useVariants} onCheckedChange={toggleVariants} aria-label="This product has variants" />
+              </div>
+            </CardHeader>
+            {useVariants && (
+              <CardContent className="space-y-3 pt-0">
+                {values.variants.map((variant, index) => {
+                  const vPrice = Number(variant.price) || 0;
+                  const vCost = Number(variant.costPrice) || 0;
+                  return (
+                    <div key={variant._id ?? index} className="space-y-2.5 rounded-lg border border-border p-3">
+                      <div className="flex gap-2">
+                        <Input
+                          value={variant.name}
+                          onChange={(e) => setVariant(index, { name: e.target.value })}
+                          placeholder="Medium / Black"
+                          aria-label="Variant name"
+                          required
+                          className="flex-[1.6]"
+                        />
+                        <Input
+                          value={variant.sku}
+                          onChange={(e) => setVariant(index, { sku: e.target.value })}
+                          placeholder="SKU"
+                          aria-label="Variant SKU"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => set("variants", values.variants.filter((_, i) => i !== index))}
+                          aria-label="Remove variant"
+                        >
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <VariantNumber
+                          label="Price"
+                          required
+                          value={variant.price}
+                          onChange={(v) => setVariant(index, { price: v })}
+                        />
+                        <VariantNumber
+                          label="Compare-at"
+                          value={variant.compareAtPrice}
+                          onChange={(v) => setVariant(index, { compareAtPrice: v })}
+                        />
+                        <VariantNumber
+                          label="Cost"
+                          value={variant.costPrice}
+                          onChange={(v) => setVariant(index, { costPrice: v })}
+                        />
+                        {values.trackInventory && (
+                          <VariantNumber
+                            label="Stock"
+                            step="1"
+                            value={variant.stock}
+                            onChange={(v) => setVariant(index, { stock: v })}
+                          />
+                        )}
+                      </div>
+                      {vPrice > 0 && vCost > 0 && (
+                        <p className="text-[12px] text-muted-foreground">
+                          Profit {formatCurrency(vPrice - vCost, { decimals: false })} ·{" "}
+                          {(((vPrice - vCost) / vPrice) * 100).toFixed(0)}% margin
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+                {errors.variants && <p className="text-[12.5px] text-destructive">{errors.variants}</p>}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    set("variants", [
+                      ...values.variants,
+                      { name: "", sku: "", price: "", compareAtPrice: "", costPrice: "", stock: 0 },
+                    ])
+                  }
+                >
+                  <Plus className="size-3.5" />
+                  Add variant
+                </Button>
+              </CardContent>
+            )}
           </Card>
 
           <Card>
@@ -355,54 +429,72 @@ export function ProductForm({
             <CardHeader>
               <CardTitle>Pricing</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-0">
-              <Field label="Selling price" error={errors.price} required>
-                <Input
-                  value={values.price}
-                  onChange={(e) => set("price", e.target.value)}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="4500"
-                  required
-                  aria-invalid={!!errors.price}
-                />
-              </Field>
-              <Field label="Compare-at price" error={errors.compareAtPrice} hint="Shows a struck-through 'was' price.">
-                <Input
-                  value={values.compareAtPrice}
-                  onChange={(e) => set("compareAtPrice", e.target.value)}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="6000"
-                  aria-invalid={!!errors.compareAtPrice}
-                />
-              </Field>
-              <Field label="Cost price" hint="What you pay. Used to work out profit — never shown to customers.">
-                <Input
-                  value={values.costPrice}
-                  onChange={(e) => set("costPrice", e.target.value)}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="2200"
-                />
-              </Field>
-
-              {price > 0 && cost > 0 && (
-                <div className="rounded-lg bg-muted/60 p-3 text-[13px]">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Profit per sale</span>
-                    <span className="font-semibold tabular-nums">{formatCurrency(price - cost, { decimals: false })}</span>
+            {useVariants ? (
+              <CardContent className="space-y-2 pt-0">
+                <p className="text-[13px] text-muted-foreground">
+                  Each variant has its own price, compare-at price and cost. Set them under Variants.
+                </p>
+                {variantPrices.some((p) => p > 0) && (
+                  <div className="flex justify-between rounded-lg bg-muted/60 p-3 text-[13px]">
+                    <span className="text-muted-foreground">Price range</span>
+                    <span className="font-semibold tabular-nums">
+                      {formatCurrency(Math.min(...variantPrices), { decimals: false })}
+                      {Math.max(...variantPrices) !== Math.min(...variantPrices) &&
+                        ` – ${formatCurrency(Math.max(...variantPrices), { decimals: false })}`}
+                    </span>
                   </div>
-                  <div className="mt-1 flex justify-between">
-                    <span className="text-muted-foreground">Margin</span>
-                    <span className="font-semibold tabular-nums">{margin.toFixed(0)}%</span>
+                )}
+              </CardContent>
+            ) : (
+              <CardContent className="space-y-4 pt-0">
+                <Field label="Selling price" error={errors.price} required>
+                  <Input
+                    value={values.price}
+                    onChange={(e) => set("price", e.target.value)}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="4500"
+                    required
+                    aria-invalid={!!errors.price}
+                  />
+                </Field>
+                <Field label="Compare-at price" error={errors.compareAtPrice} hint="Shows a struck-through 'was' price.">
+                  <Input
+                    value={values.compareAtPrice}
+                    onChange={(e) => set("compareAtPrice", e.target.value)}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="6000"
+                    aria-invalid={!!errors.compareAtPrice}
+                  />
+                </Field>
+                <Field label="Cost price" hint="What you pay. Used to work out profit — never shown to customers.">
+                  <Input
+                    value={values.costPrice}
+                    onChange={(e) => set("costPrice", e.target.value)}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="2200"
+                  />
+                </Field>
+  
+                {price > 0 && cost > 0 && (
+                  <div className="rounded-lg bg-muted/60 p-3 text-[13px]">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Profit per sale</span>
+                      <span className="font-semibold tabular-nums">{formatCurrency(price - cost, { decimals: false })}</span>
+                    </div>
+                    <div className="mt-1 flex justify-between">
+                      <span className="text-muted-foreground">Margin</span>
+                      <span className="font-semibold tabular-nums">{margin.toFixed(0)}%</span>
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
+                )}
+              </CardContent>
+            )}
           </Card>
 
           <Card>
@@ -422,14 +514,20 @@ export function ProductForm({
                 <>
                   <Separator />
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Stock on hand">
-                      <Input
-                        value={values.stock}
-                        onChange={(e) => set("stock", e.target.value)}
-                        type="number"
-                        min={0}
-                      />
-                    </Field>
+                    {useVariants ? (
+                      <Field label="Stock on hand" hint="Total across variants.">
+                        <Input value={variantStock} readOnly disabled />
+                      </Field>
+                    ) : (
+                      <Field label="Stock on hand">
+                        <Input
+                          value={values.stock}
+                          onChange={(e) => set("stock", e.target.value)}
+                          type="number"
+                          min={0}
+                        />
+                      </Field>
+                    )}
                     <Field label="Low stock at">
                       <Input
                         value={values.lowStockThreshold}
@@ -540,6 +638,39 @@ export function ProductForm({
         title="Product images"
       />
     </form>
+  );
+}
+
+function VariantNumber({
+  label,
+  value,
+  onChange,
+  required,
+  step = "0.01",
+}: {
+  label: string;
+  value: number | string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  step?: string;
+}) {
+  const id = React.useId();
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={id} className="text-[12px] text-muted-foreground">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </Label>
+      <Input
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        type="number"
+        min={0}
+        step={step}
+        required={required}
+      />
+    </div>
   );
 }
 

@@ -28,20 +28,30 @@ type InventoryRow = {
   name: string;
   sku: string;
   image?: string;
+  /** For a product with variants, the total across them. */
   stock: number;
   lowStockThreshold: number;
-  costPrice: number;
-  price: number;
+  stockValue: number;
+  variants: { id: string; name: string; sku: string; stock: number; stockValue: number }[];
 };
+
+/** What the adjust dialog changes: a product, or one variant of it. */
+type AdjustTarget = { productId: string; variantId?: string; label: string; stock: number };
+
+function stockTone(stock: number, lowStockThreshold: number) {
+  if (stock <= 0) return "destructive" as const;
+  return stock <= lowStockThreshold ? ("warning" as const) : ("muted" as const);
+}
 
 export function InventoryTable({ products }: { products: InventoryRow[] }) {
   const router = useRouter();
   const [query, setQuery] = React.useState("");
   const [filter, setFilter] = React.useState("all");
-  const [adjusting, setAdjusting] = React.useState<InventoryRow | null>(null);
+  const [adjusting, setAdjusting] = React.useState<AdjustTarget | null>(null);
 
   const visible = products.filter((product) => {
-    if (query && !`${product.name} ${product.sku}`.toLowerCase().includes(query.toLowerCase())) return false;
+    const haystack = `${product.name} ${product.sku} ${product.variants.map((v) => `${v.name} ${v.sku}`).join(" ")}`;
+    if (query && !haystack.toLowerCase().includes(query.toLowerCase())) return false;
     if (filter === "low") return product.stock > 0 && product.stock <= product.lowStockThreshold;
     if (filter === "out") return product.stock <= 0;
     return true;
@@ -88,10 +98,9 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visible.map((product) => {
-              const low = product.stock > 0 && product.stock <= product.lowStockThreshold;
-              return (
-                <TableRow key={product.id}>
+            {visible.map((product) => (
+              <React.Fragment key={product.id}>
+                <TableRow>
                   <TableCell className="pl-5">
                     <div className="flex items-center gap-3">
                       <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
@@ -109,22 +118,60 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={product.stock <= 0 ? "destructive" : low ? "warning" : "muted"}>
-                      {product.stock}
-                    </Badge>
+                    <Badge variant={stockTone(product.stock, product.lowStockThreshold)}>{product.stock}</Badge>
                   </TableCell>
                   <TableCell className="text-right text-[13px] tabular-nums text-muted-foreground">
-                    {formatCurrency(product.stock * product.costPrice, { decimals: false })}
+                    {formatCurrency(product.stockValue, { decimals: false })}
                   </TableCell>
                   <TableCell className="pr-5 text-right">
-                    <Button size="sm" variant="outline" onClick={() => setAdjusting(product)}>
-                      <PackagePlus className="size-3.5" />
-                      Adjust
-                    </Button>
+                    {/* A product with variants is adjusted one variant at a time, on the rows below. */}
+                    {product.variants.length === 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setAdjusting({ productId: product.id, label: product.name, stock: product.stock })
+                        }
+                      >
+                        <PackagePlus className="size-3.5" />
+                        Adjust
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
-              );
-            })}
+                {product.variants.map((variant) => (
+                  <TableRow key={variant.id} className="bg-muted/30">
+                    <TableCell className="pl-[4.25rem]">
+                      <p className="truncate text-[13px]">{variant.name}</p>
+                      {variant.sku && <p className="text-[12px] text-muted-foreground">{variant.sku}</p>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={stockTone(variant.stock, product.lowStockThreshold)}>{variant.stock}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-[13px] tabular-nums text-muted-foreground">
+                      {formatCurrency(variant.stockValue, { decimals: false })}
+                    </TableCell>
+                    <TableCell className="pr-5 text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setAdjusting({
+                            productId: product.id,
+                            variantId: variant.id,
+                            label: `${product.name} · ${variant.name}`,
+                            stock: variant.stock,
+                          })
+                        }
+                      >
+                        <PackagePlus className="size-3.5" />
+                        Adjust
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </React.Fragment>
+            ))}
           </TableBody>
         </Table>
 
@@ -134,8 +181,8 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
       </CardContent>
 
       <AdjustDialog
-        key={adjusting?.id ?? "none"}
-        product={adjusting}
+        key={adjusting ? `${adjusting.productId}:${adjusting.variantId ?? ""}` : "none"}
+        target={adjusting}
         onClose={() => setAdjusting(null)}
         onDone={() => {
           setAdjusting(null);
@@ -147,11 +194,11 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
 }
 
 function AdjustDialog({
-  product,
+  target,
   onClose,
   onDone,
 }: {
-  product: InventoryRow | null;
+  target: AdjustTarget | null;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -160,14 +207,15 @@ function AdjustDialog({
   const [note, setNote] = React.useState("");
   const [pending, startTransition] = React.useTransition();
 
-  if (!product) return null;
+  if (!target) return null;
 
   const delta = type === "damage" ? -Math.abs(Number(quantity) || 0) : Number(quantity) || 0;
-  const after = Math.max(0, product.stock + delta);
+  const after = Math.max(0, target.stock + delta);
 
   const submit = () => {
     const data = new FormData();
-    data.set("productId", product.id);
+    data.set("productId", target.productId);
+    if (target.variantId) data.set("variantId", target.variantId);
     data.set("type", type);
     data.set("quantity", quantity);
     data.set("note", note);
@@ -189,7 +237,7 @@ function AdjustDialog({
         <DialogHeader>
           <DialogTitle>Adjust stock</DialogTitle>
           <DialogDescription>
-            {product.name} · currently {product.stock} in stock
+            {target.label} · currently {target.stock} in stock
           </DialogDescription>
         </DialogHeader>
 

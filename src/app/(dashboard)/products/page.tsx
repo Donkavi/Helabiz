@@ -8,6 +8,7 @@ import { Category } from "@/models/Category";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { productSummary } from "@/lib/products";
 import { ProductsTable } from "./products-table";
 import { CategoryManager } from "./category-manager";
 
@@ -34,23 +35,28 @@ export default async function ProductsPage({
     Product.countDocuments({ businessId, status: { $ne: "archived" } }),
   ]);
 
-  const rows = serialize(products).map((p) => ({
-    id: String(p._id),
-    name: p.name,
-    slug: p.slug,
-    sku: p.sku ?? "",
-    price: p.price,
-    compareAtPrice: p.compareAtPrice ?? undefined,
-    costPrice: p.costPrice ?? 0,
-    stock: p.stock ?? 0,
-    lowStockThreshold: p.lowStockThreshold ?? 5,
-    trackInventory: p.trackInventory ?? true,
-    image: p.images?.[0],
-    status: p.status ?? "active",
-    featured: Boolean(p.featured),
-    categoryId: p.categoryId ? String(p.categoryId) : undefined,
-    sold: p.sold ?? 0,
-  }));
+  const rows = serialize(products).map((p) => {
+    const summary = productSummary(p);
+    return {
+      id: String(p._id),
+      name: p.name,
+      slug: p.slug,
+      sku: p.sku ?? "",
+      price: summary.price,
+      maxPrice: summary.maxPrice,
+      compareAtPrice: summary.compareAtPrice,
+      costPrice: summary.costPrice,
+      stock: summary.stock,
+      variantCount: p.variants?.length ?? 0,
+      lowStockThreshold: p.lowStockThreshold ?? 5,
+      trackInventory: p.trackInventory ?? true,
+      image: p.images?.[0],
+      status: p.status ?? "active",
+      featured: Boolean(p.featured),
+      categoryId: p.categoryId ? String(p.categoryId) : undefined,
+      sold: p.sold ?? 0,
+    };
+  });
 
   const categoryOptions = serialize(categories).map((c) => ({ id: String(c._id), name: c.name, slug: c.slug }));
 

@@ -70,6 +70,13 @@ export function selectProducts(
   return list.slice(0, limit);
 }
 
+/** "Rs. 4,500", or "From Rs. 4,500" when the variants are priced differently. */
+function priceLabel(product: PublicProduct) {
+  const price = formatCurrency(product.price, { decimals: false });
+  const priced = product.variants ?? [];
+  return priced.some((v) => v.price !== product.price) ? `From ${price}` : price;
+}
+
 /* ── Product card (shared by grid, shop page and related products) ─────── */
 export function ProductCard({
   product,
@@ -91,8 +98,12 @@ export function ProductCard({
   const onSale = !!product.compareAtPrice && product.compareAtPrice > product.price;
   const soldOut = product.trackInventory && product.stock <= 0;
   const discount = onSale ? Math.round((1 - product.price / product.compareAtPrice!) * 100) : 0;
+  // A product with variants can't go in the cart until one is chosen, so its
+  // button falls through to the card's link and opens the product page.
+  const choose = (product.variants?.length ?? 0) > 0;
 
   const handleAdd = (e: React.MouseEvent) => {
+    if (choose && !ctx.editor) return;
     e.preventDefault();
     e.stopPropagation();
     if (ctx.editor || soldOut) return;
@@ -153,7 +164,7 @@ export function ProductCard({
         <h3 style={{ fontSize: 14.5, fontWeight: 600, lineHeight: 1.35 }}>{product.name}</h3>
         {showPrice && (
           <p style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 14.5, fontWeight: 600 }}>
-            {formatCurrency(product.price, { decimals: false })}
+            {priceLabel(product)}
             {onSale && (
               <span className="w-muted" style={{ fontWeight: 400, fontSize: 13, textDecoration: "line-through" }}>
                 {formatCurrency(product.compareAtPrice!, { decimals: false })}
@@ -182,7 +193,7 @@ export function ProductCard({
             }}
           >
             {added ? <Check size={14} /> : <ShoppingBag size={14} />}
-            {added ? "Added" : soldOut ? "Sold out" : "Add to cart"}
+            {added ? "Added" : soldOut ? "Sold out" : choose ? "Choose options" : "Add to cart"}
           </button>
         )}
       </div>
@@ -323,7 +334,7 @@ export function FeaturedProductSection({ node, ctx }: P) {
         )}
         {bool(p.showPrice, true) && (
           <p style={{ marginTop: 20, fontSize: 24, fontWeight: 600, display: "flex", gap: 12, alignItems: "baseline" }}>
-            {formatCurrency(product.price, { decimals: false })}
+            {priceLabel(product)}
             {onSale && (
               <span className="w-muted" style={{ fontSize: 16, fontWeight: 400, textDecoration: "line-through" }}>
                 {formatCurrency(product.compareAtPrice!, { decimals: false })}

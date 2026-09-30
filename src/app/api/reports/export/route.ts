@@ -7,6 +7,7 @@ import { Expense } from "@/models/Expense";
 import { InventoryMovement } from "@/models/InventoryMovement";
 import { Category } from "@/models/Category";
 import { dailySeries, daysAgo } from "@/services/metrics-service";
+import { productSummary, variantPricing } from "@/lib/products";
 
 /** RFC 4180 quoting — commas, quotes and newlines all survive a round trip. */
 function toCsv(rows: (string | number | null | undefined)[][]) {
@@ -70,19 +71,30 @@ export async function GET(request: Request) {
       const categoryName = new Map(categories.map((c) => [String(c._id), c.name]));
       rows = [
         ["Name", "SKU", "Category", "Price", "Compare at", "Cost", "Margin %", "Stock", "Sold", "Status", "Featured"],
-        ...products.map((product) => [
-          product.name,
-          product.sku,
-          product.categoryId ? categoryName.get(String(product.categoryId)) : "",
-          product.price,
-          product.compareAtPrice ?? "",
-          product.costPrice ?? 0,
-          product.price > 0 ? Math.round(((product.price - (product.costPrice ?? 0)) / product.price) * 100) : 0,
-          product.stock ?? 0,
-          product.sold ?? 0,
-          product.status,
-          product.featured ? "yes" : "no",
-        ]),
+        // A product with variants exports one row per variant, since each has its own figures.
+        ...products.flatMap((product) => {
+          const category = product.categoryId ? categoryName.get(String(product.categoryId)) : "";
+          const variants = product.variants?.length
+            ? product.variants.map((v) => ({
+                name: `${product.name} (${v.name})`,
+                sku: v.sku ?? product.sku,
+                ...variantPricing(product, v),
+              }))
+            : [{ name: product.name, sku: product.sku, ...productSummary(product) }];
+          return variants.map((row) => [
+            row.name,
+            row.sku,
+            category,
+            row.price,
+            row.compareAtPrice ?? "",
+            row.costPrice,
+            row.price > 0 ? Math.round(((row.price - row.costPrice) / row.price) * 100) : 0,
+            row.stock,
+            product.sold ?? 0,
+            product.status,
+            product.featured ? "yes" : "no",
+          ]);
+        }),
       ];
       break;
     }

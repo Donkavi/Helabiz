@@ -25,10 +25,12 @@ export const productSchema = z
       .array(
         z.object({
           _id: z.string().optional(),
-          name: z.string().min(1).max(80),
+          name: z.string().min(1, "Give every variant a name").max(80),
           sku: optionalString(60),
-          price: z.coerce.number().min(0).optional(),
-          stock: z.coerce.number().int().min(0).default(0),
+          price: money,
+          compareAtPrice: z.coerce.number().min(0).max(100_000_000).optional(),
+          costPrice: money.default(0),
+          stock: z.coerce.number().int().min(0).max(1_000_000).default(0),
         }),
       )
       .max(30)
@@ -36,9 +38,15 @@ export const productSchema = z
     seoTitle: optionalString(70),
     seoDescription: optionalString(180),
   })
-  .refine((data) => !data.compareAtPrice || data.compareAtPrice > data.price, {
+  // With variants the product-level prices are derived from them, so only
+  // one set is ever checked.
+  .refine((data) => data.variants.length > 0 || !data.compareAtPrice || data.compareAtPrice > data.price, {
     message: "The compare-at price should be higher than the selling price",
     path: ["compareAtPrice"],
+  })
+  .refine((data) => data.variants.every((v) => !v.compareAtPrice || v.compareAtPrice > v.price), {
+    message: "Each variant's compare-at price should be higher than its selling price",
+    path: ["variants"],
   });
 
 export const categorySchema = z.object({
@@ -111,6 +119,7 @@ export const expenseSchema = z.object({
 
 export const stockAdjustmentSchema = z.object({
   productId: z.string().min(1),
+  variantId: optionalString(60),
   type: z.enum(["restock", "adjustment", "damage", "return"]),
   quantity: z.coerce.number().int().refine((v) => v !== 0, "Enter a quantity"),
   note: optionalString(300),

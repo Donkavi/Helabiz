@@ -5,6 +5,7 @@ const InventoryMovementSchema = new Schema(
     businessId: { type: Schema.Types.ObjectId, ref: "Business", required: true, index: true },
     productId: { type: Schema.Types.ObjectId, ref: "Product", required: true, index: true },
     variantId: String,
+    variantName: String,
     productName: String,
     type: { type: String, enum: ["sale", "restock", "adjustment", "return", "damage"], required: true },
     quantity: { type: Number, required: true },

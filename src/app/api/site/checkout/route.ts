@@ -7,6 +7,7 @@ import { Website } from "@/models/Website";
 import { createOrder } from "@/services/order-service";
 import { assertWithinLimit, LimitError } from "@/services/limits-service";
 import { rateLimit } from "@/lib/rate-limit";
+import { hasVariants, productSummary, variantPricing } from "@/lib/products";
 
 /**
  * Public checkout endpoint (spec §27, §28).
@@ -96,11 +97,13 @@ export async function POST(request: Request) {
     }
 
     const variant = item.variantId ? product.variants?.find((v) => String(v._id) === item.variantId) : undefined;
-    if (item.variantId && !variant) {
+    // A product with variants is only ever sold as one of them.
+    if ((item.variantId || hasVariants(product)) && !variant) {
       return NextResponse.json({ ok: false, error: `That option of ${product.name} is unavailable` }, { status: 409 });
     }
 
-    const available = variant ? (variant.stock ?? 0) : (product.stock ?? 0);
+    const pricing = variant ? variantPricing(product, variant) : productSummary(product);
+    const available = pricing.stock;
     if (product.trackInventory && available < item.quantity) {
       return NextResponse.json(
         {
@@ -114,7 +117,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const price = variant?.price ?? product.price;
+    const price = pricing.price;
     subtotal += price * item.quantity;
 
     lines.push({
@@ -124,7 +127,7 @@ export async function POST(request: Request) {
       variantName: variant?.name,
       image: product.images?.[0],
       price,
-      costPrice: product.costPrice ?? 0,
+      costPrice: pricing.costPrice,
       quantity: item.quantity,
     });
   }

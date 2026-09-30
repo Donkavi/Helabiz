@@ -4,6 +4,7 @@ import { requireBusiness } from "@/lib/permissions";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Product } from "@/models/Product";
 import { Category } from "@/models/Category";
+import { variantPricing } from "@/lib/products";
 import { ProductForm, type ProductFormValues } from "../product-form";
 
 export const metadata: Metadata = { title: "Edit product" };
@@ -38,13 +39,18 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     tags: plain.tags ?? [],
     status: plain.status ?? "active",
     featured: Boolean(plain.featured),
-    variants: (plain.variants ?? []).map((v) => ({
-      _id: String(v._id),
-      name: v.name,
-      sku: v.sku ?? "",
-      price: v.price ?? "",
-      stock: v.stock ?? 0,
-    })),
+    variants: (plain.variants ?? []).map((v) => {
+      const pricing = variantPricing(plain, v);
+      return {
+        _id: String(v._id),
+        name: v.name,
+        sku: v.sku ?? "",
+        price: pricing.price,
+        compareAtPrice: pricing.compareAtPrice ?? "",
+        costPrice: pricing.costPrice || "",
+        stock: pricing.stock,
+      };
+    }),
     seoTitle: plain.seo?.title ?? "",
     seoDescription: plain.seo?.description ?? "",
   };

@@ -26,10 +26,13 @@ export type ProductRow = {
   name: string;
   slug: string;
   sku: string;
+  /** For a product with variants: the cheapest variant's price, cost and compare-at, and total stock. */
   price: number;
+  maxPrice: number;
   compareAtPrice?: number;
   costPrice: number;
   stock: number;
+  variantCount: number;
   lowStockThreshold: number;
   trackInventory: boolean;
   image?: string;
@@ -186,7 +189,13 @@ export function ProductsTable({
                             </span>
                             {product.featured && <Star className="size-3 shrink-0 fill-gold text-gold" />}
                           </span>
-                          {product.sku && <span className="block text-[12px] text-muted-foreground">{product.sku}</span>}
+                          {(product.sku || product.variantCount > 0) && (
+                            <span className="block text-[12px] text-muted-foreground">
+                              {[product.sku, product.variantCount > 0 && `${product.variantCount} variants`]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          )}
                         </span>
                       </Link>
                     </TableCell>
@@ -196,6 +205,8 @@ export function ProductsTable({
                     <TableCell className="text-right">
                       <span className="text-[13.5px] font-medium tabular-nums">
                         {formatCurrency(product.price, { decimals: false })}
+                        {product.maxPrice > product.price &&
+                          ` – ${formatCurrency(product.maxPrice, { decimals: false })}`}
                       </span>
                       {product.compareAtPrice && (
                         <span className="block text-[12px] text-muted-foreground line-through tabular-nums">

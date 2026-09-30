@@ -28,7 +28,7 @@ type CatalogueProduct = {
   trackInventory: boolean;
   image?: string;
   sku?: string;
-  variants: { id: string; name: string; price?: number; stock: number }[];
+  variants: { id: string; name: string; price: number; costPrice: number; stock: number }[];
 };
 
 type Line = {
@@ -96,10 +96,10 @@ export function OrderComposer({
           name: product.name,
           variantName: variant?.name,
           image: product.image,
-          price: variant?.price ?? product.price,
-          costPrice: product.costPrice,
+          price: variant ? variant.price : product.price,
+          costPrice: variant ? variant.costPrice : product.costPrice,
           quantity: 1,
-          stock: product.trackInventory ? (variant?.stock ?? product.stock) : undefined,
+          stock: product.trackInventory ? (variant ? variant.stock : product.stock) : undefined,
         },
       ];
     });
@@ -240,7 +240,7 @@ export function OrderComposer({
                               <span className="flex-1">{variant.name}</span>
                               <span className="text-muted-foreground">{variant.stock} left</span>
                               <span className="font-medium">
-                                {formatCurrency(variant.price ?? product.price, { decimals: false })}
+                                {formatCurrency(variant.price, { decimals: false })}
                               </span>
                             </button>
                           ))}

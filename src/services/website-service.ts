@@ -10,6 +10,7 @@ import { normalizeTheme } from "@/lib/website/themes";
 import { uniqueSlug } from "./business-service";
 import { usageFor } from "./limits-service";
 import { UNLIMITED } from "@/lib/plans";
+import { productSummary, variantPricing } from "@/lib/products";
 import type { NavItem, SectionNode, ThemeTokens } from "@/types";
 import type { PublicCategory, PublicProduct, SiteBusiness, SiteSettings } from "@/lib/website/render-types";
 
@@ -232,16 +233,22 @@ export function toPublicProduct(product: {
   createdAt?: unknown;
   shortDescription?: string | null;
   description?: string | null;
-  variants?: { _id: unknown; name: string; price?: number | null; stock?: number | null }[] | null;
+  costPrice?: number | null;
+  variants?:
+    | { _id: unknown; name: string; price?: number | null; compareAtPrice?: number | null; stock?: number | null }[]
+    | null;
 }): PublicProduct {
+  // Derived rather than read, so products saved before variants carried their
+  // own prices still show one consistent set.
+  const summary = productSummary(product);
   return {
     id: String(product._id),
     name: product.name,
     slug: product.slug,
-    price: product.price,
-    compareAtPrice: product.compareAtPrice ?? undefined,
+    price: summary.price,
+    compareAtPrice: summary.compareAtPrice,
     images: product.images ?? [],
-    stock: product.stock ?? 0,
+    stock: summary.stock,
     trackInventory: product.trackInventory ?? true,
     categoryId: product.categoryId ? String(product.categoryId) : undefined,
     featured: Boolean(product.featured),
@@ -249,12 +256,16 @@ export function toPublicProduct(product: {
     createdAt: product.createdAt ? String(product.createdAt) : undefined,
     shortDescription: product.shortDescription ?? undefined,
     description: product.description ?? undefined,
-    variants: (product.variants ?? []).map((v) => ({
-      id: String(v._id),
-      name: v.name,
-      price: v.price ?? undefined,
-      stock: v.stock ?? 0,
-    })),
+    variants: (product.variants ?? []).map((v) => {
+      const pricing = variantPricing(product, v);
+      return {
+        id: String(v._id),
+        name: v.name,
+        price: pricing.price,
+        compareAtPrice: pricing.compareAtPrice,
+        stock: pricing.stock,
+      };
+    }),
   };
 }
 
