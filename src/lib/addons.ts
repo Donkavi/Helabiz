@@ -39,9 +39,9 @@ export const ADDONS: Record<AddonId, Addon> = {
   whatsapp_chat: {
     id: "whatsapp_chat",
     name: "Chat with customers",
-    tagline: "A WhatsApp button on every page",
+    tagline: "Live chat and WhatsApp on every page",
     description:
-      "A chat button follows your customers around the site. Tapping it opens WhatsApp to your number with the page or product they were looking at already written out.",
+      "A chat button follows your customers around the site. Signed-in customers chat with you right there — you answer from Messages in your dashboard, with their details and orders beside the chat — and anyone can tap through to WhatsApp instead.",
     price: ADDON_PRICE,
   },
   order_tracking: {
@@ -55,6 +55,18 @@ export const ADDONS: Record<AddonId, Addon> = {
 };
 
 export const ADDON_LIST: Addon[] = [ADDONS.order_email, ADDONS.whatsapp_chat, ADDONS.order_tracking];
+
+/**
+ * The add-ons on sale right now.
+ *
+ * Email order updates is only offered while this installation can actually
+ * send email: selling it otherwise bills a shop for messages that never
+ * leave. The caller says whether mail is configured, since this module reads
+ * no environment of its own.
+ */
+export function offeredAddonIds(emailReady: boolean): AddonId[] {
+  return ADDON_LIST.filter((addon) => addon.id !== "order_email" || emailReady).map((addon) => addon.id);
+}
 
 export function isAddonId(value: unknown): value is AddonId {
   return value === "order_email" || value === "whatsapp_chat" || value === "order_tracking";

@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getPlan } from "@/lib/plans";
 import { UpgradeNotice } from "@/components/dashboard/upgrade-notice";
+import { PageTour } from "@/components/dashboard/tour/tour";
 
 export const metadata: Metadata = { title: "Invoices" };
 
@@ -32,16 +33,19 @@ export default async function InvoicesPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="invoices" />
       <PageHeader
         title="Invoices"
         description="Professional invoices generated from your orders, ready to print or send."
       />
 
       {!plan.limits.invoices && (
-        <UpgradeNotice
-          title="Invoices are a Starter feature"
-          description="Upgrade to generate professional invoices from any order, complete with your business details."
-        />
+        <div data-tour="invoices-upgrade">
+          <UpgradeNotice
+            title="Invoices are a Starter feature"
+            description="Upgrade to generate professional invoices from any order, complete with your business details."
+          />
+        </div>
       )}
 
       {invoices.length === 0 ? (
@@ -50,13 +54,13 @@ export default async function InvoicesPage() {
           title="No invoices yet"
           description="Open any order and choose 'Create invoice' to generate one. It picks up your business details and the order's items automatically."
           action={
-            <Button asChild>
+            <Button asChild data-tour="invoices-from-orders">
               <Link href="/orders">Go to orders</Link>
             </Button>
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div data-tour="invoices-table" className="overflow-hidden rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -71,7 +75,11 @@ export default async function InvoicesPage() {
               {invoices.map((invoice) => (
                 <TableRow key={String(invoice._id)}>
                   <TableCell>
-                    <Link href={`/invoices/${invoice._id}`} className="font-mono text-[13px] font-medium hover:text-primary">
+                    <Link
+                      href={`/invoices/${invoice._id}`}
+                      className="font-mono text-[13px] font-medium hover:text-primary"
+                      data-tour="invoices-open"
+                    >
                       {invoice.invoiceNumber}
                     </Link>
                   </TableCell>
@@ -80,7 +88,7 @@ export default async function InvoicesPage() {
                     {formatDate(invoice.issueDate as unknown as string)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={STATUS_VARIANT[invoice.status ?? "draft"]}>{invoice.status}</Badge>
+                    <Badge variant={STATUS_VARIANT[invoice.status ?? "draft"]} data-tour="invoices-status">{invoice.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right text-[13.5px] font-semibold tabular-nums">
                     {formatCurrency(invoice.total ?? 0, { decimals: false })}

@@ -5,6 +5,7 @@ import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { ThemeGallery } from "./theme-gallery";
 
 export const metadata: Metadata = { title: "Website themes" };
@@ -21,6 +22,7 @@ export default async function WebsiteThemesPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website-themes" />
       <PageHeader
         title="Themes"
         description="A theme sets your colours, fonts and shapes. Swapping one keeps all your content exactly as it is."

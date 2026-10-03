@@ -4,9 +4,14 @@ import { BusinessMember } from "@/models/BusinessMember";
 import { Subscription } from "@/models/Subscription";
 import { User } from "@/models/User";
 import { slugify } from "@/lib/utils";
+import { isReservedSubdomain } from "@/lib/website/urls";
 
-/** Finds a free slug by appending -2, -3 … when the preferred one is taken. */
-export async function uniqueSlug(base: string, exists: (slug: string) => Promise<boolean>) {
+/**
+ * Finds a free slug by appending -2, -3 … when the preferred one is taken.
+ * Reserved subdomains count as taken: a slug becomes a web address.
+ */
+export async function uniqueSlug(base: string, isTaken: (slug: string) => Promise<boolean>) {
+  const exists = async (slug: string) => isReservedSubdomain(slug) || isTaken(slug);
   const root = slugify(base) || "business";
   if (!(await exists(root))) return root;
   for (let i = 2; i < 200; i += 1) {

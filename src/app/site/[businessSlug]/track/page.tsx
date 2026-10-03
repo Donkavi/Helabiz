@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, Package, Search } from "lucide-react";
+import { Package, Search } from "lucide-react";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Order } from "@/models/Order";
 import { Customer } from "@/models/Customer";
@@ -8,18 +8,10 @@ import { loadPublishedSite } from "@/lib/website/load-site";
 import { WebsiteRenderer } from "@/components/website/website-renderer";
 import { normalizePhone } from "@/lib/whatsapp";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { OrderJourney } from "@/components/website/account/order-journey";
 
 export const metadata: Metadata = { title: "Track your order", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
-
-/** The journey shown to the customer, in the order it happens. */
-const JOURNEY = [
-  { status: "pending", label: "Order received" },
-  { status: "confirmed", label: "Confirmed" },
-  { status: "processing", label: "Being packed" },
-  { status: "shipped", label: "On the way" },
-  { status: "delivered", label: "Delivered" },
-];
 
 /**
  * The tracking page from the "Order tracking" add-on.
@@ -65,10 +57,6 @@ export default async function TrackPage({
       if (given && given === onOrder) found = serialize(order) as Record<string, unknown>;
     }
   }
-
-  const status = String(found?.status ?? "");
-  const reached = JOURNEY.findIndex((step) => step.status === status);
-  const cancelled = status === "cancelled";
 
   return (
     <WebsiteRenderer sections={[]} header={site.header} footer={site.footer} ctx={site.ctx} mode="public">
@@ -159,23 +147,7 @@ export default async function TrackPage({
               {formatCurrency(Number(found.total ?? 0), { decimals: false })}
             </p>
 
-            {cancelled ? (
-              <p style={{ marginTop: 18, fontWeight: 600 }}>This order was cancelled.</p>
-            ) : (
-              <ol style={{ marginTop: 20, display: "grid", gap: 14, listStyle: "none", padding: 0 }}>
-                {JOURNEY.map((step, index) => {
-                  const done = index <= reached;
-                  return (
-                    <li key={step.status} style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                      {done ? <CheckCircle2 size={18} /> : <Circle size={18} opacity={0.35} />}
-                      <span style={{ fontSize: 14.5, opacity: done ? 1 : 0.5, fontWeight: done ? 600 : 400 }}>
-                        {step.label}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
+            <OrderJourney status={String(found.status ?? "")} />
           </div>
         )}
       </div>

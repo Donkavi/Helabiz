@@ -43,7 +43,8 @@ export async function usageFor(businessId: string): Promise<UsageSnapshot> {
     Product.countDocuments({ businessId, status: { $ne: "archived" } }),
     website ? WebsitePage.countDocuments({ websiteId: website._id }) : 0,
     Website.countDocuments({ businessId }),
-    BusinessMember.countDocuments({ businessId, status: { $ne: "disabled" } }),
+    // Helabiz support access is not a seat the business pays for.
+    BusinessMember.countDocuments({ businessId, status: { $ne: "disabled" }, support: { $ne: true } }),
   ]);
 
   return {

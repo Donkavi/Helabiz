@@ -122,7 +122,7 @@ export function PagesManager({ pages, allowance }: { pages: PageRow[]; allowance
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3" data-tour="website-pages-add">
         <p className="mr-auto text-[13px] text-muted-foreground">
           {Number.isFinite(allowance.max) ? (
             <>
@@ -144,7 +144,7 @@ export function PagesManager({ pages, allowance }: { pages: PageRow[]; allowance
         </Button>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-2" data-tour="website-pages-list">
         {order.map((page, index) => (
           <li
             key={page.id}
@@ -200,7 +200,7 @@ export function PagesManager({ pages, allowance }: { pages: PageRow[]; allowance
               </p>
             </div>
 
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="outline" asChild data-tour="website-pages-edit">
               <Link href={`/website/builder/${page.id}`}>
                 <Sparkles className="size-3.5" />
                 Edit
@@ -209,7 +209,7 @@ export function PagesManager({ pages, allowance }: { pages: PageRow[]; allowance
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${page.title}`}>
+                <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${page.title}`} data-tour="website-pages-actions">
                   <MoreHorizontal />
                 </Button>
               </DropdownMenuTrigger>

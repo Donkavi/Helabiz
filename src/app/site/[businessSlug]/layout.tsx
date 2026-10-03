@@ -7,6 +7,8 @@ import { CartProvider } from "@/components/website/cart-provider";
 import { CartDrawer } from "@/components/website/cart-drawer";
 import { AnalyticsBeacon } from "@/components/website/analytics-beacon";
 import { WhatsAppBubble } from "@/components/website/whatsapp-bubble";
+import { ShopChatWidget } from "@/components/website/shop-chat";
+import { siteChatEnabled } from "@/components/website/account/account-shell";
 
 /**
  * Multi-tenant and database-backed: every response depends on which business is
@@ -57,8 +59,10 @@ export default async function SiteLayout({
 
   const fontHref = googleFontsHref([site.ctx.theme.headingFont, site.ctx.theme.bodyFont]);
 
-  // The chat add-on needs a number to chat to; without one there is nothing
-  // to show, however much has been paid.
+  // With customer accounts the add-on chats on the site itself, WhatsApp kept
+  // as an option. Without them it is the WhatsApp button alone, which needs a
+  // number to chat to: no number, nothing to show, however much has been paid.
+  const chatOnSite = siteChatEnabled(site);
   const chatNumber = site.addons.includes("whatsapp_chat")
     ? site.ctx.business.whatsapp || site.ctx.business.phone || ""
     : "";
@@ -77,12 +81,23 @@ export default async function SiteLayout({
         <CartDrawer ctx={site.ctx} />
       </CartProvider>
       <AnalyticsBeacon businessId={site.businessId} websiteId={site.websiteId} />
-      {chatNumber && (
-        <WhatsAppBubble
-          phone={chatNumber}
-          businessName={site.ctx.business.name}
+      {chatOnSite ? (
+        <ShopChatWidget
+          businessSlug={businessSlug}
+          shopName={site.ctx.business.name}
+          logo={site.ctx.business.logo}
           basePath={site.ctx.basePath}
+          whatsapp={chatNumber}
+          theme={site.ctx.theme}
         />
+      ) : (
+        chatNumber && (
+          <WhatsAppBubble
+            phone={chatNumber}
+            businessName={site.ctx.business.name}
+            basePath={site.ctx.basePath}
+          />
+        )
       )}
     </>
   );

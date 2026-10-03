@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, MessagesSquare } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/permissions/admin";
 import { businessDetail } from "@/services/admin-service";
+import { latestWebsiteRequest } from "@/services/support-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,8 @@ import { siteUrlFor } from "@/lib/website/urls";
 import { formatCurrency, formatNumber, relativeTime } from "@/lib/utils";
 import { BusinessControls } from "./business-controls";
 import { BusinessEditor } from "./business-editor";
+import { RequestStatusBadge } from "../../requests/request-status-badge";
+import { SupportAccess } from "../../support/support-access";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,10 +22,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function AdminBusinessPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
   const { id } = await params;
   const business = await businessDetail(id);
   if (!business) notFound();
+  const request = await latestWebsiteRequest(business.id);
+
+  // Helabiz team members let in to build or fix the site.
+  const supportMembers = business.members.filter((member) => member.support);
+  const mySupport = supportMembers.some((member) => member.userId === admin.id);
 
   return (
     <div className="space-y-6">
@@ -98,7 +106,11 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
                       <span className="block truncate text-[13.5px]">{member.name}</span>
                       <span className="block truncate text-[12px] text-muted-foreground">{member.email}</span>
                     </span>
-                    <Badge variant="muted">{member.role}</Badge>
+                    {member.support ? (
+                      <Badge variant="soft">Helabiz support</Badge>
+                    ) : (
+                      <Badge variant="muted">{member.role}</Badge>
+                    )}
                     {member.status !== "active" && <Badge variant="destructive">{member.status}</Badge>}
                   </li>
                 ))}
@@ -147,6 +159,51 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
                 plan={business.plan}
                 status={business.status}
               />
+            </CardContent>
+          </Card>
+
+          {/* Help from the Helabiz team */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Support</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-0 text-[13.5px]">
+              <div className="flex flex-wrap items-center gap-2">
+                {request && (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/admin/requests/${request.id}`}>
+                      <FileText className="size-3.5" />
+                      {request.status === "done" || request.status === "cancelled" ? "Last request" : "Website request"}
+                      <RequestStatusBadge status={request.status} />
+                    </Link>
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/admin/support/${business.id}`}>
+                    <MessagesSquare className="size-3.5" />
+                    Chat
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <p className="text-[13px] font-medium">Support access</p>
+                <p className="mt-1 text-[12.5px] text-muted-foreground">
+                  {supportMembers.length
+                    ? `${supportMembers
+                        .map((member) => (member.userId === admin.id ? "You" : member.name))
+                        .join(", ")} ${supportMembers.length === 1 && !mySupport ? "is" : "are"} in this business as “Helabiz support”. The owner can see this.`
+                    : "Nobody from the team is in this business. Opening it adds you as “Helabiz support”, which the owner can see."}
+                </p>
+                <div className="mt-3">
+                  <SupportAccess
+                    businessId={business.id}
+                    hasAccess={mySupport}
+                    othersHaveAccess={supportMembers.some((member) => member.userId !== admin.id)}
+                    allowGrant
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 

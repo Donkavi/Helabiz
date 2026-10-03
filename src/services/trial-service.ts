@@ -8,7 +8,7 @@ export type ActivateResult =
   | { ok: false; error: string };
 
 /**
- * Starts the seven-day trial for a business.
+ * Starts the one-month (30-day) trial for a business.
  *
  * Activation is once per business and is written with a filter that requires
  * `trialStartedAt` to be unset, so two clicks (or two tabs) cannot extend a

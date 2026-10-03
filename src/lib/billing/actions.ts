@@ -6,7 +6,8 @@ import { connectDB, serialize } from "@/lib/db/mongoose";
 import { getStorage, UploadError } from "@/lib/storage";
 import { rateLimit } from "@/lib/rate-limit";
 import { attachSlip, isPaidPlan, startSubscriptionPayment } from "@/services/subscription-service";
-import { isAddonId } from "@/lib/addons";
+import { isAddonId, offeredAddonIds } from "@/lib/addons";
+import { emailReady } from "@/lib/mailer";
 
 /**
  * The checkout actions.
@@ -34,7 +35,8 @@ export async function startPaymentAction(input: { plan?: string | null; addons?:
   if (role !== "owner") return { ok: false as const, error: "Only the business owner can change the plan." };
 
   const plan = input.plan && isPaidPlan(input.plan) ? input.plan : null;
-  const addons = [...new Set((input.addons ?? []).filter(isAddonId))];
+  const offered = offeredAddonIds(emailReady());
+  const addons = [...new Set((input.addons ?? []).filter(isAddonId).filter((id) => offered.includes(id)))];
   if (!plan && addons.length === 0) return { ok: false as const, error: "Choose a plan or an add-on." };
 
   const payment = await startSubscriptionPayment(businessId, { plan, addons });

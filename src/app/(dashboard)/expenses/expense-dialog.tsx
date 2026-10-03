@@ -107,7 +107,7 @@ export function ExpenseDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {controlledOpen === undefined && (
         <DialogTrigger asChild>
-          <Button>
+          <Button data-tour="expenses-add">
             <Plus className="size-4" />
             Record expense
           </Button>

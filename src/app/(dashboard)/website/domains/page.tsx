@@ -8,6 +8,7 @@ import { Domain } from "@/models/Domain";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { UpgradeNotice } from "@/components/dashboard/upgrade-notice";
 import { getPlan } from "@/lib/plans";
 import { SITE_DOMAIN, siteUrlFor } from "@/lib/website/urls";
@@ -28,13 +29,14 @@ export default async function DomainsPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website-domains" />
       <PageHeader
         title="Domains"
         description="Your free Helabiz address, plus your own domain name when you are ready."
       />
 
       {/* Free subdomain — always available */}
-      <Card>
+      <Card data-tour="website-domains-free">
         <CardHeader>
           <CardTitle>Your Helabiz address</CardTitle>
         </CardHeader>
@@ -76,7 +78,7 @@ export default async function DomainsPage() {
         target={siteUrlFor(business.slug)}
       />
 
-      <Card>
+      <Card data-tour="website-domains-help">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="size-4 text-muted-foreground" />

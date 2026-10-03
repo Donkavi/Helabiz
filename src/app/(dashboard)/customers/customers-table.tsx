@@ -60,7 +60,7 @@ export function CustomersTable({ customers, initialQuery }: { customers: Custome
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
+      <div data-tour="customers-search" className="relative max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
@@ -74,7 +74,7 @@ export function CustomersTable({ customers, initialQuery }: { customers: Custome
       {visible.length === 0 ? (
         <EmptyState compact icon={Search} title="No customers match that search" />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div data-tour="customers-table" className="overflow-hidden rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -119,7 +119,12 @@ export function CustomersTable({ customers, initialQuery }: { customers: Custome
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${customer.name}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Actions for ${customer.name}`}
+                          data-tour="customers-row-actions"
+                        >
                           <MoreHorizontal />
                         </Button>
                       </DropdownMenuTrigger>

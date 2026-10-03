@@ -76,7 +76,7 @@ export function OrdersTable({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
+        <div data-tour="orders-status" className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.value}
@@ -92,7 +92,7 @@ export function OrdersTable({
           ))}
         </div>
 
-        <div className="relative min-w-[180px] flex-1">
+        <div data-tour="orders-search" className="relative min-w-[180px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
@@ -104,7 +104,7 @@ export function OrdersTable({
         </div>
 
         <Select value={source} onValueChange={setSource}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[150px]" data-tour="orders-source">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -139,7 +139,7 @@ export function OrdersTable({
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div data-tour="orders-list" className="overflow-hidden rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">

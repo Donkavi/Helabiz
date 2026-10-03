@@ -4,8 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-/** The admin tabs. A client component only so it can mark the current one. */
-export function AdminNav({ links }: { links: { href: string; label: string; exact?: boolean }[] }) {
+/**
+ * The admin tabs. A client component only so it can mark the current one.
+ * A `count` shows as a badge: work waiting for the team on that screen.
+ */
+export function AdminNav({
+  links,
+}: {
+  links: { href: string; label: string; exact?: boolean; count?: number }[];
+}) {
   const pathname = usePathname();
 
   return (
@@ -18,11 +25,16 @@ export function AdminNav({ links }: { links: { href: string; label: string; exac
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-[13.5px] font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13.5px] font-medium transition-colors",
               active ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {link.label}
+            {link.count ? (
+              <span className="min-w-[18px] rounded-full bg-primary px-1.5 text-center text-[11px] leading-[18px] font-semibold text-primary-foreground tabular-nums">
+                {link.count > 99 ? "99+" : link.count}
+              </span>
+            ) : null}
           </Link>
         );
       })}

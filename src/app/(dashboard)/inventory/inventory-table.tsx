@@ -64,7 +64,7 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
           <CardTitle>Stock levels</CardTitle>
         </div>
         <div className="flex flex-wrap gap-2">
-          <div className="relative min-w-[180px] flex-1">
+          <div data-tour="inventory-search" className="relative min-w-[180px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -75,7 +75,7 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
             />
           </div>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[160px]" data-tour="inventory-filter">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -129,6 +129,7 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
                       <Button
                         size="sm"
                         variant="outline"
+                        data-tour="inventory-adjust"
                         onClick={() =>
                           setAdjusting({ productId: product.id, label: product.name, stock: product.stock })
                         }
@@ -155,6 +156,7 @@ export function InventoryTable({ products }: { products: InventoryRow[] }) {
                       <Button
                         size="sm"
                         variant="outline"
+                        data-tour="inventory-adjust"
                         onClick={() =>
                           setAdjusting({
                             productId: product.id,

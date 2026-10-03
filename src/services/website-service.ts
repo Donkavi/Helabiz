@@ -328,6 +328,7 @@ export function toSiteSettings(settings?: {
   showCart?: boolean | null;
   allowCheckout?: boolean | null;
   whatsappOrdering?: boolean | null;
+  customerAccounts?: boolean | null;
   announcement?: string | null;
   announcementEnabled?: boolean | null;
 } | null): SiteSettings {
@@ -335,6 +336,7 @@ export function toSiteSettings(settings?: {
     showCart: settings?.showCart ?? true,
     allowCheckout: settings?.allowCheckout ?? true,
     whatsappOrdering: settings?.whatsappOrdering ?? true,
+    customerAccounts: settings?.customerAccounts ?? true,
     announcement: settings?.announcement ?? undefined,
     announcementEnabled: settings?.announcementEnabled ?? false,
   };

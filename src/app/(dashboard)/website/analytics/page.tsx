@@ -9,6 +9,7 @@ import { AnalyticsEvent } from "@/models/AnalyticsEvent";
 import { Order } from "@/models/Order";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CategoryBarChart, DonutChart } from "@/components/charts/revenue-chart";
@@ -73,6 +74,7 @@ export default async function WebsiteAnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website-analytics" />
       <PageHeader
         title="Website analytics"
         description="What visitors do on your website, over the last 30 days."
@@ -86,14 +88,16 @@ export default async function WebsiteAnalyticsPage() {
       )}
 
       {!hasData ? (
-        <EmptyState
-          icon={Eye}
-          title="No visits recorded yet"
-          description="Once your website is published and people start visiting, their page views, product interest and orders show up here."
-        />
+        <div data-tour="website-analytics-empty">
+          <EmptyState
+            icon={Eye}
+            title="No visits recorded yet"
+            description="Once your website is published and people start visiting, their page views, product interest and orders show up here."
+          />
+        </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-tour="website-analytics-stats">
             <StatCard label="Visitors" value={formatNumber(metrics.visitors)} icon={Users} tone="primary" />
             <StatCard label="Page views" value={formatNumber(metrics.pageViews)} icon={Eye} />
             <StatCard
@@ -117,7 +121,7 @@ export default async function WebsiteAnalyticsPage() {
           </div>
 
           {/* The funnel, in plain language */}
-          <Card>
+          <Card data-tour="website-analytics-funnel">
             <CardHeader>
               <CardTitle>From visit to order</CardTitle>
               <p className="text-[12.5px] text-muted-foreground">
@@ -142,7 +146,7 @@ export default async function WebsiteAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-5 xl:grid-cols-2">
+          <div className="grid gap-5 xl:grid-cols-2" data-tour="website-analytics-pages">
             <Card>
               <CardHeader>
                 <CardTitle>Top pages</CardTitle>
@@ -165,7 +169,7 @@ export default async function WebsiteAnalyticsPage() {
             </Card>
           </div>
 
-          <Card>
+          <Card data-tour="website-analytics-products">
             <CardHeader>
               <CardTitle>Most viewed products</CardTitle>
               <p className="text-[12.5px] text-muted-foreground">

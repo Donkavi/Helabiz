@@ -301,30 +301,6 @@ export default async function LandingPage() {
         </div>
       </Section>
 
-      {/* ── Testimonials ───────────────────────────────────────────────── */}
-      <Section className="border-y border-border bg-card/40">
-        <SectionIntro eyebrow={t.testimonials.eyebrow} title={t.testimonials.title} />
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
-          {t.testimonials.items.map((item) => (
-            <figure key={item.name} className="flex flex-col rounded-xl border border-border bg-card p-6">
-              <blockquote className="flex-1 text-[14.5px] leading-relaxed text-foreground">“{item.quote}”</blockquote>
-              <figcaption className="mt-5 flex items-center gap-3 border-t border-border pt-4">
-                <span className="flex size-9 items-center justify-center rounded-full bg-primary-muted text-[12px] font-semibold text-primary">
-                  {item.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .join("")}
-                </span>
-                <div>
-                  <p className="text-[13.5px] font-semibold">{item.name}</p>
-                  <p className="text-[12.5px] text-muted-foreground">{item.role}</p>
-                </div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </Section>
-
       {/* ── FAQ ────────────────────────────────────────────────────────── */}
       <Section id="faq">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">

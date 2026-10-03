@@ -29,11 +29,16 @@ import { siteUrlFor, siteDisplayUrl } from "@/lib/website/urls";
 import { getTheme } from "@/lib/website/themes";
 import { ALL_TEMPLATES } from "@/lib/website/templates";
 import { TemplateThumbnail } from "@/components/website/template-thumbnail";
-import { activeAddons, addonStatuses } from "@/lib/addons";
+import { activeAddons, addonStatuses, offeredAddonIds } from "@/lib/addons";
+import { emailReady, shopSenderAddress } from "@/lib/mailer";
 import { TemplateChooser } from "./template-chooser";
 import { WebsiteAddons } from "./website-addons";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { ChangeTemplateButton } from "./change-template-button";
 import { PublishControls } from "./publish-controls";
+import { WebsiteHelpBanner } from "@/components/dashboard/support/website-help-banner";
+import { isOpenRequest } from "@/components/dashboard/support/copy";
+import { latestWebsiteRequest } from "@/services/support-service";
 
 export const metadata: Metadata = { title: "Website" };
 
@@ -41,11 +46,15 @@ export default async function WebsiteOverviewPage() {
   const { business, businessId } = await requireBusiness();
   await connectDB();
 
-  const website = await Website.findOne({ businessId }).lean();
+  const [website, request] = await Promise.all([
+    Website.findOne({ businessId }).lean(),
+    latestWebsiteRequest(businessId),
+  ]);
 
   // Free plans build only from the designs marked free; every paid plan gets all.
   const plan = await planFor(businessId);
   const canUsePremium = plan.limits.templates === UNLIMITED;
+  const offered = offeredAddonIds(emailReady());
 
   if (!website) {
     const productCount = await Product.countDocuments({ businessId, status: { $ne: "archived" } });
@@ -59,6 +68,9 @@ export default async function WebsiteOverviewPage() {
           productCount={productCount}
           canUsePremium={canUsePremium}
           activeAddons={[...activeAddons(business)]}
+          offeredAddons={offered}
+          requestStatus={request?.status ?? null}
+          defaultPhone={business.phone ?? undefined}
         />
       </div>
     );
@@ -78,19 +90,20 @@ export default async function WebsiteOverviewPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website" />
       <PageHeader
         title="Website"
         description="Your online shop front. Edit it visually and publish when you are happy."
         actions={
           <>
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild data-tour="website-preview">
               <a href={liveUrl} target="_blank" rel="noopener noreferrer">
                 <Eye className="size-4" />
                 Preview
               </a>
             </Button>
             {homePage && (
-              <Button asChild>
+              <Button asChild data-tour="website-builder">
                 <Link href={`/website/builder/${homePage._id}`}>
                   <Sparkles className="size-4" />
                   Open builder
@@ -102,7 +115,7 @@ export default async function WebsiteOverviewPage() {
       />
 
       {/* Status card */}
-      <Card>
+      <Card data-tour="website-status">
         <CardContent className="flex flex-wrap items-center gap-5 py-5">
           <span
             className="flex size-12 shrink-0 items-center justify-center rounded-xl"
@@ -138,8 +151,13 @@ export default async function WebsiteOverviewPage() {
         </CardContent>
       </Card>
 
+      {/* Not live yet, or the team is still on it. */}
+      {(!published || isOpenRequest(request?.status)) && (
+        <WebsiteHelpBanner status={request?.status} defaultPhone={business.phone ?? undefined} />
+      )}
+
       {/* Traffic */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="website-stats">
         <StatCard label="Visitors" value={formatNumber(metrics.visitors)} sublabel="last 30 days" icon={Eye} />
         <StatCard label="Page views" value={formatNumber(metrics.pageViews)} sublabel="last 30 days" />
         <StatCard
@@ -159,7 +177,7 @@ export default async function WebsiteOverviewPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-tour="website-shortcuts">
         <QuickLink
           href="/website/pages"
           icon={PanelsTopLeft}
@@ -186,10 +204,15 @@ export default async function WebsiteOverviewPage() {
         />
       </div>
 
-      <WebsiteAddons statuses={addonStatuses(business)} trackUrl={`${liveUrl}/track`} />
+      <WebsiteAddons
+        statuses={addonStatuses(business).filter((status) => status.active || offered.includes(status.addon.id))}
+        trackUrl={`${liveUrl}/track`}
+        senderAddress={shopSenderAddress(business.slug) ?? undefined}
+        replyTo={business.email ?? undefined}
+      />
 
       {/* Template */}
-      <Card>
+      <Card data-tour="website-template">
         <CardContent className="flex flex-wrap items-center gap-5 py-5">
           <span className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border">
             <TemplateThumbnail theme={plain.theme ?? theme.tokens} category={template?.category} />
@@ -216,7 +239,7 @@ export default async function WebsiteOverviewPage() {
       </Card>
 
       {/* Pages list */}
-      <Card>
+      <Card data-tour="website-pages">
         <CardHeader className="flex-row items-center">
           <CardTitle>Your pages</CardTitle>
           <Button variant="ghost" size="sm" className="ml-auto" asChild>

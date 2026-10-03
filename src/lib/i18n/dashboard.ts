@@ -48,6 +48,7 @@ export type DashboardCopy = {
     products: string;
     inventory: string;
     customers: string;
+    messages: string;
     expenses: string;
     invoices: string;
     reports: string;
@@ -172,6 +173,7 @@ const EN: DashboardCopy = {
     products: "Products",
     inventory: "Inventory",
     customers: "Customers",
+    messages: "Messages",
     expenses: "Expenses",
     invoices: "Invoices",
     reports: "Reports",
@@ -314,6 +316,7 @@ const SI: DashboardCopy = {
     products: "භාණ්ඩ",
     inventory: "තොග",
     customers: "ගනුදෙනුකරුවෝ",
+    messages: "පණිවිඩ",
     expenses: "වියදම්",
     invoices: "Invoice",
     reports: "වාර්තා",

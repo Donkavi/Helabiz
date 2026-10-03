@@ -51,7 +51,7 @@ export function PlanComparison({
                 <p className="mt-3 text-[22px] font-semibold tracking-[-0.03em]">
                   {plan.price === 0 ? "Free" : formatCurrency(plan.price, { decimals: false })}
                   <span className="text-[12.5px] font-normal text-muted-foreground">
-                    {plan.price === 0 ? " for 7 days" : " /month"}
+                    {plan.price === 0 ? " for 1 month" : " /month"}
                   </span>
                 </p>
 

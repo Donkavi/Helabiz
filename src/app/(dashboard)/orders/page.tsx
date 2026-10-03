@@ -8,6 +8,7 @@ import { Order } from "@/models/Order";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { OrdersTable } from "./orders-table";
 import { formatCurrency } from "@/lib/utils";
 import { REVENUE_STATUSES, monthStart } from "@/services/metrics-service";
@@ -65,11 +66,12 @@ export default async function OrdersPage({
 
   return (
     <div className="space-y-6">
+      <PageTour id="orders" />
       <PageHeader
         title="Orders"
         description="Website, WhatsApp and walk-in orders — all in one list."
         actions={
-          <Button asChild>
+          <Button asChild data-tour="orders-new">
             <Link href="/orders/new">
               <Plus className="size-4" />
               New order
@@ -78,7 +80,7 @@ export default async function OrdersPage({
         }
       >
         {totalCount > 0 && (
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
+          <div data-tour="orders-summary" className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
             <span>
               <span className="font-semibold text-foreground">{formatCurrency(monthRevenue[0]?.total ?? 0, { decimals: false })}</span>{" "}
               this month
@@ -107,7 +109,7 @@ export default async function OrdersPage({
             </Button>
           }
           secondaryAction={
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild data-tour="orders-website">
               <Link href="/website">Set up your website</Link>
             </Button>
           }

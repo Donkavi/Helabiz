@@ -31,9 +31,9 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "free",
     name: "Free trial",
     price: 0,
-    tagline: "Seven days, no card",
+    tagline: "One month, no card",
     description:
-      "Everything you need to open a real shop online, free for 7 days. Choose a plan before it ends to stay open.",
+      "Everything you need to open a real shop online, free for a whole month. Choose a plan before it ends to stay open.",
     limits: {
       ordersPerMonth: 20,
       products: 50,
@@ -51,7 +51,7 @@ export const PLANS: Record<PlanId, Plan> = {
       removeBranding: false,
     },
     features: [
-      "Full access for 7 days",
+      "Full access for 1 month",
       "20 orders per month",
       "50 products",
       "Basic website builder",

@@ -43,7 +43,7 @@ export function CategoryManager({ categories }: { categories: { id: string; name
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" data-tour="products-categories">
           <FolderTree className="size-4" />
           Categories
         </Button>

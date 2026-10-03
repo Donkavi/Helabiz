@@ -4,6 +4,7 @@ import { requireBusiness } from "@/lib/permissions";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Website } from "@/models/Website";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { WebsiteSettingsForm } from "./settings-form";
 
 export const metadata: Metadata = { title: "Website settings" };
@@ -19,6 +20,7 @@ export default async function WebsiteSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website-settings" />
       <PageHeader title="Website settings" description="Your web address, search listing, and how your shop behaves." />
       <WebsiteSettingsForm
         initial={{
@@ -29,6 +31,7 @@ export default async function WebsiteSettingsPage() {
           showCart: plain.settings?.showCart ?? true,
           allowCheckout: plain.settings?.allowCheckout ?? true,
           whatsappOrdering: plain.settings?.whatsappOrdering ?? true,
+          customerAccounts: plain.settings?.customerAccounts ?? true,
           announcementEnabled: plain.settings?.announcementEnabled ?? false,
           announcement: plain.settings?.announcement ?? "",
           logo: business.logo ?? "",

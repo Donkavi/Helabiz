@@ -62,7 +62,6 @@ export type MarketingCopy = {
     templates: { eyebrow: string; title: string; body: string; browseAll: string };
     steps: { eyebrow: string; title: string; items: { n: string; title: string; body: string }[] };
     pricing: { eyebrow: string; title: string; body: string };
-    testimonials: { eyebrow: string; title: string; items: { quote: string; name: string; role: string }[] };
     faq: { eyebrow: string; title: string; body: string; items: Faq[] };
     finalCta: { title: string; body: string; startFree: string; seePricing: string };
   };
@@ -88,7 +87,7 @@ export type MarketingCopy = {
   planCard: {
     mostPopular: string;
     free: string;
-    /** Sits under the price on the free card: "for 7 days". */
+    /** Sits under the price on the free card: "for 1 month". */
     freeFor: string;
     perMonth: string;
     currentPlan: string;
@@ -176,7 +175,7 @@ const EN: MarketingCopy = {
       "Manage your products, orders, customers and profits — and build your own professional website without writing code.",
     startFree: "Start free",
     createWebsite: "Create a website",
-    reassurance: "7-day free trial · No card required · Live in under an hour",
+    reassurance: "1-month free trial · No card required · Live in under an hour",
 
     problem: {
       eyebrow: "The problem",
@@ -282,32 +281,7 @@ const EN: MarketingCopy = {
     pricing: {
       eyebrow: "Pricing",
       title: "Start free. Upgrade when it pays for itself.",
-      body: "Prices in Sri Lankan Rupees. Every account starts with a 7-day free trial — pick a plan before it ends and your shop never closes.",
-    },
-
-    testimonials: {
-      eyebrow: "Customers",
-      title: "Shops already running on Helabiz",
-      items: [
-        {
-          quote:
-            "I was posting clothes on Instagram and losing track of who ordered what. Now customers order from my own site and everything lands in one place.",
-          name: "Tharushi Silva",
-          role: "Kavi Fashion, Colombo",
-        },
-        {
-          quote:
-            "The website took me one evening. My customers order cakes without messaging me at midnight, and I finally know what my profit is.",
-          name: "Nimali Perera",
-          role: "Sweet Crumb Bakery, Kandy",
-        },
-        {
-          quote:
-            "Stock used to be a guess. Now every website order reduces inventory and I get a warning before something runs out.",
-          name: "Roshan Fernando",
-          role: "TechPoint, Negombo",
-        },
-      ],
+      body: "Prices in Sri Lankan Rupees. Every account starts with a 1-month free trial — pick a plan before it ends and your shop never closes.",
     },
 
     faq: {
@@ -333,7 +307,7 @@ const EN: MarketingCopy = {
         },
         {
           q: "Can I try it before paying?",
-          a: "Yes. Every account starts with a 7-day free trial — a real published website, 20 orders and 50 products, no card required. When the seven days are up, choose a plan to keep your shop open.",
+          a: "Yes. Every account starts with a 1-month free trial — a real published website, 20 orders and 50 products, no card required. When the month is up, choose a plan to keep your shop open.",
         },
         {
           q: "Does my website work on phones?",
@@ -381,16 +355,16 @@ const EN: MarketingCopy = {
       { q: "How do I pay?", a: "Bank transfer today, with local card gateways being added. The billing system is built so a provider can be connected without any change to your store." },
       { q: "Is there a contract?", a: "No. Plans are monthly and you can cancel whenever you like. Your shop stays open until the end of the period you have paid for, and nothing is deleted afterwards." },
     ],
-    cta: "Start your 7-day free trial",
+    cta: "Start your 1-month free trial",
   },
 
   plans: {
     free: {
       name: "Free trial",
-      tagline: "Seven days, no card",
-      description: "Everything you need to open a real shop online, free for 7 days. Choose a plan before it ends to stay open.",
+      tagline: "One month, no card",
+      description: "Everything you need to open a real shop online, free for a whole month. Choose a plan before it ends to stay open.",
       features: [
-        "Full access for 7 days",
+        "Full access for 1 month",
         "20 orders per month",
         "50 products",
         "Basic website builder",
@@ -435,7 +409,7 @@ const EN: MarketingCopy = {
   planCard: {
     mostPopular: "Most popular",
     free: "Free",
-    freeFor: "for 7 days",
+    freeFor: "for 1 month",
     perMonth: "/month",
     currentPlan: "Current plan",
     startFree: "Start free trial",
@@ -524,7 +498,7 @@ const SI: MarketingCopy = {
       "භාණ්ඩ, order, ගනුදෙනුකරුවෝ සහ ලාභය කළමනාකරණය කරන්න — ඒ එක්කම කේත ලියන්නේ නැතිව ඔබේම වෘත්තීය වෙබ් අඩවියක් හදාගන්න.",
     startFree: "නොමිලේ පටන් ගන්න",
     createWebsite: "වෙබ් අඩවියක් හදන්න",
-    reassurance: "දින 7ක් නොමිලේ · Card එකක් ඕන නෑ · පැයකට අඩුවෙන් online",
+    reassurance: "මාසයක් නොමිලේ · Card එකක් ඕන නෑ · පැයකට අඩුවෙන් online",
 
     problem: {
       eyebrow: "ප්‍රශ්නය",
@@ -633,31 +607,6 @@ const SI: MarketingCopy = {
       body: "මිල ශ්‍රී ලංකා රුපියල් වලින්. ඕන වෙලාවක නවත්තන්න පුළුවන් — නොමිලේ plan එකේ ඔබේ වෙබ් අඩවිය publish වෙලාම තියෙනවා.",
     },
 
-    testimonials: {
-      eyebrow: "ගනුදෙනුකරුවෝ",
-      title: "දැනටමත් Helabiz පාවිච්චි කරන සාප්පු",
-      items: [
-        {
-          quote:
-            "මම Instagram එකේ ඇඳුම් දාලා, කවුද මොනවද order කළේ කියලා අමතක වෙනවා. දැන් ගනුදෙනුකරුවෝ මගේම අඩවියෙන් order කරනවා, හැම දෙයක්ම එකම තැනකට එනවා.",
-          name: "තරුෂි සිල්වා",
-          role: "Kavi Fashion, කොළඹ",
-        },
-        {
-          quote:
-            "වෙබ් අඩවිය හදන්න ගියේ එක සැන්දෑවක්. දැන් ගනුදෙනුකරුවෝ මැදියම් රෑ මට message කරන්නේ නැතුව cake order කරනවා, ලාභය කීයද කියලත් දැන් මම දන්නවා.",
-          name: "නිමාලි පෙරේරා",
-          role: "Sweet Crumb Bakery, මහනුවර",
-        },
-        {
-          quote:
-            "Stock කියන්නේ කලින් අනුමානයක්. දැන් හැම website order එකකින්ම තොගය අඩු වෙනවා, ඉවර වෙන්න කලින් මට දැනුම් දෙනවා.",
-          name: "රොෂාන් ප්‍රනාන්දු",
-          role: "TechPoint, මීගමුව",
-        },
-      ],
-    },
-
     faq: {
       eyebrow: "ප්‍රශ්න",
       title: "අපෙන් නිතර අහන ප්‍රශ්න",
@@ -681,7 +630,7 @@ const SI: MarketingCopy = {
         },
         {
           q: "ගෙවන්න කලින් බලන්න පුළුවන්ද?",
-          a: "ඔව්. හැම account එකක්ම පටන් ගන්නේ දින 7ක නොමිලේ අත්හදා බැලීමකින් — ඇත්ත publish වුණු වෙබ් අඩවියක්, order 20ක්, භාණ්ඩ 50ක්, card එකක් ඕන නෑ. දින 7 ඉවර වුණාම සාප්පුව විවෘතව තියාගන්න plan එකක් තෝරන්න.",
+          a: "ඔව්. හැම account එකක්ම පටන් ගන්නේ මාසයක නොමිලේ අත්හදා බැලීමකින් — ඇත්ත publish වුණු වෙබ් අඩවියක්, order 20ක්, භාණ්ඩ 50ක්, card එකක් ඕන නෑ. මාසය ඉවර වුණාම සාප්පුව විවෘතව තියාගන්න plan එකක් තෝරන්න.",
         },
         {
           q: "මගේ වෙබ් අඩවිය phone එකේ හරියට වැඩ කරනවද?",
@@ -704,7 +653,7 @@ const SI: MarketingCopy = {
       "ශ්‍රී ලංකා රුපියල් වලින් සරල මිල ගණන්. ඇත්ත publish වුණු වෙබ් අඩවියක් එක්ක නොමිලේ පටන් ගන්න, සාප්පුව ලොකු වුණාම upgrade කරන්න.",
     eyebrow: "මිල ගණන්",
     title: "ශ්‍රී ලාංකික කුඩා ව්‍යාපාරයකට ගැලපෙන මිලක්",
-    lede: "දින 7ක් නොමිලේ, ඇත්ත publish වුණු වෙබ් අඩවියක් එක්ක පටන් ගන්න. දින 7 ඉවර වෙන්න කලින් ගැලපෙන plan එක තෝරන්න.",
+    lede: "මාසයක් නොමිලේ, ඇත්ත publish වුණු වෙබ් අඩවියක් එක්ක පටන් ගන්න. මාසය ඉවර වෙන්න කලින් ගැලපෙන plan එක තෝරන්න.",
     compare: "Plan සංසන්දනය",
     feature: "විශේෂාංගය",
     popular: "ජනප්‍රියයි",
@@ -729,16 +678,16 @@ const SI: MarketingCopy = {
       { q: "මම ගෙවන්නේ කොහොමද?", a: "දැනට bank transfer, local card gateway එකතු කරමින් තියෙනවා. ඔබේ සාප්පුවට කිසිම වෙනසක් නොකර provider කෙනෙක් සම්බන්ධ කරන්න පුළුවන් විදිහට billing එක හදලා තියෙන්නේ." },
       { q: "ගිවිසුමක් තියෙනවද?", a: "නෑ. Plan මාසිකයි, ඕන වෙලාවක නවත්තන්න පුළුවන්. ගෙවපු කාලය ඉවර වෙනකම් සාප්පුව විවෘතව තියෙනවා, ඊට පස්සෙත් කිසිම දෙයක් මකන්නේ නෑ." },
     ],
-    cta: "දින 7ක නොමිලේ අත්හදා බැලීම පටන් ගන්න",
+    cta: "මාසයක නොමිලේ අත්හදා බැලීම පටන් ගන්න",
   },
 
   plans: {
     free: {
       name: "නොමිලේ අත්හදා බැලීම",
-      tagline: "දින 7ක්, card එකක් ඕන නෑ",
-      description: "ඇත්ත online සාප්පුවක් පටන් ගන්න ඕන හැම දෙයක්ම, දින 7ක් නොමිලේ. ඉවර වෙන්න කලින් plan එකක් තෝරලා විවෘතව තියාගන්න.",
+      tagline: "මාසයක්, card එකක් ඕන නෑ",
+      description: "ඇත්ත online සාප්පුවක් පටන් ගන්න ඕන හැම දෙයක්ම, මාසයක් නොමිලේ. ඉවර වෙන්න කලින් plan එකක් තෝරලා විවෘතව තියාගන්න.",
       features: [
-        "දින 7ක් සම්පූර්ණ පිවිසුම",
+        "මාසයක් සම්පූර්ණ පිවිසුම",
         "මාසෙකට order 20ක්",
         "භාණ්ඩ 50ක්",
         "මූලික වෙබ් අඩවි නිර්මාණකරු",
@@ -783,7 +732,7 @@ const SI: MarketingCopy = {
   planCard: {
     mostPopular: "වැඩියෙන්ම ජනප්‍රිය",
     free: "නොමිලේ",
-    freeFor: "දින 7කට",
+    freeFor: "මාසයකට",
     perMonth: "/මාසෙට",
     currentPlan: "දැන් තියෙන plan එක",
     startFree: "නොමිලේ අත්හදා බලන්න",

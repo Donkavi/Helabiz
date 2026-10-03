@@ -18,6 +18,8 @@ const UserSchema = new Schema(
     disabledAt: Date,
     lastBusinessId: { type: Schema.Types.ObjectId, ref: "Business" },
     onboardedAt: Date,
+    /** Guided tours this person has finished or skipped, so each one only starts by itself once. */
+    toursSeen: { type: [String], default: undefined },
   },
   { timestamps: true },
 );

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, ShoppingBag, X } from "lucide-react";
+import { Menu, ShoppingBag, UserRound, X } from "lucide-react";
 import type { SectionNode } from "@/types";
 import type { SiteContext } from "@/lib/website/render-types";
 import { useCart } from "../cart-provider";
@@ -51,6 +51,11 @@ export function HeaderSection({ node, ctx }: P) {
   const actions = (
     <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
       {str(p.buttonText) && <SiteButton ctx={ctx} href={str(p.buttonUrl)} label={str(p.buttonText)} size="sm" />}
+      {ctx.settings.customerAccounts && (
+        <SiteLink ctx={ctx} href="/account" ariaLabel="My account" style={{ display: "inline-flex", padding: 4, color: "inherit" }}>
+          <UserRound size={20} />
+        </SiteLink>
+      )}
       {bool(p.showCart, true) && ctx.settings.showCart && (
         <button
           type="button"

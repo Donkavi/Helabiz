@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 /**
  * The countdown across the top of the dashboard.
  *
- * A trial shows it for all seven days, because a week is short and the day it
- * closes should never be a surprise. A paid month only shows it in the last
- * five days — a banner every day for a month is wallpaper, and wallpaper does
- * not get read. Both turn urgent at the same point they turn useful.
+ * A trial shows it for the whole month, so a trial is never mistaken for a
+ * plan and the day it closes is never a surprise. A paid month only shows it
+ * in the last five days, because there is no trial to remind anyone of. Both
+ * turn urgent five days out, at the same point they turn useful.
  *
  * A locked business never gets this far, having been redirected by the gate.
  */

@@ -8,6 +8,7 @@ import { InventoryMovement } from "@/models/InventoryMovement";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,7 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="inventory" />
       <PageHeader
         title="Inventory"
         description="Stock levels update automatically when orders come in from your website."
@@ -84,14 +86,14 @@ export default async function InventoryPage() {
           title="Nothing to track yet"
           description="Add products with stock tracking turned on and they will appear here with live stock levels."
           action={
-            <Button asChild>
+            <Button asChild data-tour="inventory-add">
               <Link href="/products/new">Add a product</Link>
             </Button>
           }
         />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div data-tour="inventory-stats" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Products tracked" value={String(rows.length)} icon={Package} />
             <StatCard
               label="Stock value at cost"
@@ -112,7 +114,7 @@ export default async function InventoryPage() {
           <div className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
             <InventoryTable products={rows} />
 
-            <Card>
+            <Card data-tour="inventory-movements">
               <CardHeader>
                 <CardTitle>Recent movements</CardTitle>
                 <p className="text-[12.5px] text-muted-foreground">Every stock change, with its reason.</p>

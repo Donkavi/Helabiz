@@ -5,6 +5,7 @@ import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { usageFor } from "@/services/limits-service";
 import { PagesManager } from "./pages-manager";
 
@@ -24,6 +25,7 @@ export default async function WebsitePagesPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website-pages" />
       <PageHeader
         title="Pages"
         description="Every page on your website. Drag to change the order they appear in your menu."

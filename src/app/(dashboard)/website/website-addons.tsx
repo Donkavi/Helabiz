@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, ExternalLink, Plus } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Mail, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,23 @@ import type { AddonStatus } from "@/lib/addons";
  * website has nowhere to find them except billing, which is not where anyone
  * looks for a website feature.
  */
-export function WebsiteAddons({ statuses, trackUrl }: { statuses: AddonStatus[]; trackUrl: string }) {
+export function WebsiteAddons({
+  statuses,
+  trackUrl,
+  senderAddress,
+  replyTo,
+}: {
+  statuses: AddonStatus[];
+  trackUrl: string;
+  /** The shop's own From address, when shop email domains are configured. */
+  senderAddress?: string;
+  /** The business email customers' replies go to. */
+  replyTo?: string;
+}) {
   const off = statuses.filter((status) => !status.active);
 
   return (
-    <Card>
+    <Card data-tour="website-addons">
       <CardHeader className="flex-row items-center justify-between gap-3">
         <CardTitle>Website add-ons</CardTitle>
         {off.length > 0 && (
@@ -76,6 +88,24 @@ export function WebsiteAddons({ statuses, trackUrl }: { statuses: AddonStatus[];
                   <ExternalLink className="size-3 shrink-0" />
                   {trackUrl.replace(/^https?:\/\//, "")}
                 </a>
+              )}
+
+              {/* Who the customer sees the email from, and where their reply
+                  lands — a reply to nowhere is a lost customer. */}
+              {active && addon.id === "order_email" && senderAddress && (
+                <div className="mt-3 space-y-1 text-[12px]">
+                  <p className="flex items-center gap-1.5 break-all font-medium text-primary">
+                    <Mail className="size-3 shrink-0" />
+                    {senderAddress}
+                  </p>
+                  {replyTo ? (
+                    <p className="break-all text-muted-foreground">Replies go to {replyTo}</p>
+                  ) : (
+                    <Link href="/settings" className="font-medium text-warning hover:underline">
+                      Add your business email so customer replies reach you
+                    </Link>
+                  )}
+                </div>
               )}
 
               {!active && (

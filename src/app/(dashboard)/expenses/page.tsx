@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DonutChart } from "@/components/charts/revenue-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { formatCurrency, percentChange } from "@/lib/utils";
 import { monthStart } from "@/services/metrics-service";
 import { ExpensesTable } from "./expenses-table";
@@ -58,6 +59,7 @@ export default async function ExpensesPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="expenses" />
       <PageHeader
         title="Expenses"
         description="Record what your business spends so profit is a real number, not a guess."
@@ -73,7 +75,7 @@ export default async function ExpensesPage() {
         />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div data-tour="expenses-summary" className="grid gap-4 sm:grid-cols-3">
             <StatCard
               label="This month"
               value={formatCurrency(current, { decimals: false })}
@@ -90,7 +92,7 @@ export default async function ExpensesPage() {
           <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
             <ExpensesTable expenses={rows} />
 
-            <Card>
+            <Card data-tour="expenses-chart">
               <CardHeader>
                 <CardTitle>Where the money goes</CardTitle>
                 <p className="text-[12.5px] text-muted-foreground">This month by category</p>

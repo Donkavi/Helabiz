@@ -6,6 +6,7 @@ import {
   bypassSecret,
   comingSoonEnabled,
 } from "@/lib/coming-soon";
+import { RESERVED_SUBDOMAINS, SITE_DOMAIN } from "@/lib/website/urls";
 
 /**
  * Subdomain routing for published websites.
@@ -18,10 +19,8 @@ import {
  * Renamed from `middleware` per Next.js 16, which also fixes this to the
  * Node.js runtime.
  */
-const SITE_DOMAIN = process.env.NEXT_PUBLIC_SITE_DOMAIN || "helabiz.lk";
-
-/** Hosts that serve the Helabiz product itself rather than a customer website. */
-const APP_HOSTS = new Set(["www", "app", "admin", "api", "sites"]);
+/** Hosts that serve the Helabiz product itself (or its email) rather than a customer website. */
+const APP_HOSTS = RESERVED_SUBDOMAINS;
 
 function subdomainOf(hostname: string) {
   const host = hostname.split(":")[0].toLowerCase();

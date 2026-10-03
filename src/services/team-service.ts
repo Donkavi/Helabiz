@@ -16,9 +16,11 @@ export type TeamMember = {
   joinedAt: string;
   /** True when this row is the signed-in person, who needs guarding from themselves. */
   isSelf: boolean;
+  /** The Helabiz team, let in to build the website at the business's request. */
+  support: boolean;
 };
 
-/** Everyone attached to a business, owner first and newest staff last. */
+/** Everyone attached to a business, owner first, newest staff after, Helabiz support last. */
 export async function listTeam(businessId: string, viewerId: string): Promise<TeamMember[]> {
   await connectDB();
 
@@ -43,9 +45,13 @@ export async function listTeam(businessId: string, viewerId: string): Promise<Te
         status: (member.status ?? "active") as TeamMember["status"],
         joinedAt: String(member.createdAt),
         isSelf: String(member.userId) === viewerId,
+        support: Boolean(member.support),
       };
     })
-    .sort((a, b) => rank[a.role] - rank[b.role] || a.joinedAt.localeCompare(b.joinedAt));
+    .sort(
+      (a, b) =>
+        Number(a.support) - Number(b.support) || rank[a.role] - rank[b.role] || a.joinedAt.localeCompare(b.joinedAt),
+    );
 }
 
 /**

@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dialog";
 import { LogoMark } from "@/components/logo";
 import { PlanLimitDialog, type LimitBlockInfo } from "@/components/dashboard/plan-limit-dialog";
+import { NeedHelpButton } from "@/components/dashboard/tour/tour";
 import { addPageAction } from "@/app/(dashboard)/website/actions";
 import { cn, slugify } from "@/lib/utils";
 import { useEditor } from "./editor-store";
@@ -161,6 +162,7 @@ export function BuilderToolbar({
           <DropdownMenuTrigger
             className="flex h-8 w-[150px] items-center gap-2 rounded-lg border border-input bg-card px-2.5 text-left text-[13px] outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Page being edited"
+            data-tour="builder-pages"
           >
             <span className="min-w-0 flex-1 truncate font-medium">{currentPage?.title ?? "Page"}</span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -201,7 +203,7 @@ export function BuilderToolbar({
           </Button>
         </Tooltip>
 
-        <div className="flex items-center gap-0.5">
+        <div data-tour="builder-undo" className="flex items-center gap-0.5">
           <Tooltip content="Undo (Ctrl+Z)">
             <Button variant="ghost" size="icon-sm" onClick={undo} disabled={!canUndo} aria-label="Undo">
               <Undo2 />
@@ -215,7 +217,7 @@ export function BuilderToolbar({
         </div>
 
         {/* Viewport switcher (spec §17) */}
-        <div className="mx-auto flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
+        <div data-tour="builder-viewport" className="mx-auto flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
           {VIEWPORTS.map((option) => (
             <Tooltip key={option.value} content={option.label}>
               <button
@@ -236,9 +238,11 @@ export function BuilderToolbar({
           ))}
         </div>
 
-        <div className="hidden lg:block">
+        <div data-tour="builder-save" className="hidden lg:block">
           <SaveIndicator />
         </div>
+
+        <NeedHelpButton />
 
         <Button variant="outline" size="sm" asChild>
           <a href={previewUrl} target="_blank" rel="noopener noreferrer">
@@ -247,7 +251,12 @@ export function BuilderToolbar({
           </a>
         </Button>
 
-        <Button size="sm" onClick={() => setConfirmOpen(true)} disabled={saveState === "saving"}>
+        <Button
+          size="sm"
+          onClick={() => setConfirmOpen(true)}
+          disabled={saveState === "saving"}
+          data-tour="builder-publish"
+        >
           <Rocket className="size-3.5" />
           Publish
           {hasUnpublishedChanges && websiteStatus === "published" && (

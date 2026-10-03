@@ -1,7 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Building2, LayoutDashboard, Receipt, ScrollText, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Inbox,
+  LayoutDashboard,
+  MessagesSquare,
+  Receipt,
+  ScrollText,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { requireSuperAdmin } from "@/lib/permissions/admin";
+import { openRequestCount, unreadForHelabiz } from "@/services/support-service";
 import { Badge } from "@/components/ui/badge";
 import { LangProvider } from "@/lib/i18n/provider";
 import { AdminNav } from "./admin-nav";
@@ -14,6 +25,8 @@ export const dynamic = "force-dynamic";
 export const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/businesses", label: "Businesses", icon: Building2 },
+  { href: "/admin/requests", label: "Requests", icon: Inbox },
+  { href: "/admin/support", label: "Support", icon: MessagesSquare },
   { href: "/admin/payments", label: "Payments", icon: Receipt },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/audit", label: "Audit log", icon: ScrollText },
@@ -22,6 +35,9 @@ export const ADMIN_LINKS = [
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // The gate for the screens. Each action re-checks it for itself.
   const admin = await requireSuperAdmin();
+  // What is waiting on the team, as badges on the tabs that hold it.
+  const [openRequests, unreadMessages] = await Promise.all([openRequestCount(), unreadForHelabiz()]);
+  const counts: Record<string, number> = { "/admin/requests": openRequests, "/admin/support": unreadMessages };
 
   return (
     // English only: this is an internal tool, not a customer surface.
@@ -35,7 +51,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Badge variant="soft">Platform admin</Badge>
           </span>
 
-          <AdminNav links={ADMIN_LINKS.map(({ href, label, exact }) => ({ href, label, exact }))} />
+          <AdminNav
+            links={ADMIN_LINKS.map(({ href, label, exact }) => ({ href, label, exact, count: counts[href] }))}
+          />
 
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden text-[12.5px] text-muted-foreground sm:block">{admin.email}</span>

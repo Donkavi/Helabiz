@@ -8,6 +8,7 @@ import { createOrder } from "@/services/order-service";
 import { assertWithinLimit, LimitError } from "@/services/limits-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { hasVariants, productSummary, variantPricing } from "@/lib/products";
+import { currentShopper } from "@/services/shopper-service";
 
 /**
  * Public checkout endpoint (spec §27, §28).
@@ -148,8 +149,12 @@ export async function POST(request: Request) {
     throw error;
   }
 
+  // A signed-in customer's order goes on their account, whatever phone they typed.
+  const shopper = website.settings?.customerAccounts === false ? null : await currentShopper(businessId);
+
   const order = await createOrder({
     businessId,
+    customerId: shopper?.id,
     customer: {
       name: data.customer.name,
       phone: data.customer.phone,

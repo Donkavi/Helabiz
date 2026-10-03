@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Banknote, ChevronLeft, CreditCard, Landmark, Loader2, Lock, ShoppingBag } from "lucide-react";
+import { AlertCircle, Banknote, ChevronLeft, CreditCard, Landmark, Loader2, Lock, ShoppingBag, UserRound } from "lucide-react";
 import type { SiteContext } from "@/lib/website/render-types";
 import { formatCurrency } from "@/lib/utils";
 import { SRI_LANKA_DISTRICTS } from "@/lib/sri-lanka";
@@ -45,7 +45,21 @@ const inputStyle: React.CSSProperties = {
   color: "inherit",
 };
 
-export function CheckoutForm({ ctx, businessSlug }: { ctx: SiteContext; businessSlug: string }) {
+/** A signed-in customer's saved details, used to fill the form in. */
+type CheckoutPrefill = { name: string; phone: string; email: string; address: string; city: string; district: string };
+
+export function CheckoutForm({
+  ctx,
+  businessSlug,
+  accounts = false,
+  shopper,
+}: {
+  ctx: SiteContext;
+  businessSlug: string;
+  /** The shop has customer accounts switched on. */
+  accounts?: boolean;
+  shopper?: CheckoutPrefill;
+}) {
   const router = useRouter();
   const cart = useCart();
   const [submitting, setSubmitting] = React.useState(false);
@@ -161,8 +175,37 @@ export function CheckoutForm({ ctx, businessSlug }: { ctx: SiteContext; business
         <div style={{ display: "grid", gap: 26 }}>
           <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
             <legend style={{ fontSize: 17, fontWeight: 600, marginBottom: 16 }}>Your details</legend>
+            {(shopper || accounts) && (
+              <p
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 12px",
+                  borderRadius: "calc(var(--w-radius) * .7)",
+                  background: "color-mix(in srgb,var(--w-primary) 8%,transparent)",
+                  fontSize: 13.5,
+                }}
+              >
+                <UserRound size={15} style={{ flexShrink: 0, color: "var(--w-primary)" }} />
+                {shopper ? (
+                  <span>
+                    Signed in as <strong>{shopper.name}</strong>. This order will be saved to your account.
+                  </span>
+                ) : (
+                  <span>
+                    Have an account?{" "}
+                    <SiteLink ctx={ctx} href="/account/sign-in?next=/checkout">
+                      <strong style={{ color: "var(--w-primary)" }}>Sign in</strong>
+                    </SiteLink>{" "}
+                    to fill this in and keep track of your order.
+                  </span>
+                )}
+              </p>
+            )}
             <div style={{ display: "grid", gap: 14 }}>
-              <Field label="Full name" name="name" required autoComplete="name" />
+              <Field label="Full name" name="name" required autoComplete="name" defaultValue={shopper?.name} />
               <Field
                 label="Phone number"
                 name="phone"
@@ -170,20 +213,34 @@ export function CheckoutForm({ ctx, businessSlug }: { ctx: SiteContext; business
                 required
                 autoComplete="tel"
                 hint="We will call or message you about your delivery."
+                defaultValue={shopper?.phone}
               />
-              <Field label="Email (optional)" name="email" type="email" autoComplete="email" />
+              <Field
+                label="Email (optional)"
+                name="email"
+                type="email"
+                autoComplete="email"
+                defaultValue={shopper?.email}
+              />
             </div>
           </fieldset>
 
           <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
             <legend style={{ fontSize: 17, fontWeight: 600, marginBottom: 16 }}>Delivery address</legend>
             <div style={{ display: "grid", gap: 14 }}>
-              <Field label="Address" name="address" required autoComplete="street-address" textarea />
+              <Field
+                label="Address"
+                name="address"
+                required
+                autoComplete="street-address"
+                textarea
+                defaultValue={shopper?.address}
+              />
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 14 }}>
-                <Field label="City" name="city" required autoComplete="address-level2" />
+                <Field label="City" name="city" required autoComplete="address-level2" defaultValue={shopper?.city} />
                 <label style={{ display: "grid", gap: 6, fontSize: 13, fontWeight: 500 }}>
                   District
-                  <select name="district" style={inputStyle} defaultValue="">
+                  <select name="district" style={inputStyle} defaultValue={shopper?.district ?? ""}>
                     <option value="">Select district</option>
                     {SRI_LANKA_DISTRICTS.map((district) => (
                       <option key={district} value={district}>
@@ -386,6 +443,7 @@ function Field({
   autoComplete,
   hint,
   textarea,
+  defaultValue,
 }: {
   label: string;
   name: string;
@@ -394,6 +452,7 @@ function Field({
   autoComplete?: string;
   hint?: string;
   textarea?: boolean;
+  defaultValue?: string;
 }) {
   return (
     <label style={{ display: "grid", gap: 6, fontSize: 13, fontWeight: 500 }}>
@@ -402,9 +461,22 @@ function Field({
         {required && <span style={{ color: "#b4341f" }}> *</span>}
       </span>
       {textarea ? (
-        <textarea name={name} required={required} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+        <textarea
+          name={name}
+          required={required}
+          rows={3}
+          defaultValue={defaultValue}
+          style={{ ...inputStyle, resize: "vertical" }}
+        />
       ) : (
-        <input name={name} type={type} required={required} autoComplete={autoComplete} style={inputStyle} />
+        <input
+          name={name}
+          type={type}
+          required={required}
+          autoComplete={autoComplete}
+          defaultValue={defaultValue}
+          style={inputStyle}
+        />
       )}
       {hint && (
         <span className="w-muted" style={{ fontSize: 12, fontWeight: 400 }}>

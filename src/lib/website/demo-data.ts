@@ -231,6 +231,7 @@ export function demoSiteContext(template: Template): SiteContext {
       showCart: true,
       allowCheckout: false,
       whatsappOrdering: true,
+      customerAccounts: false,
     },
     basePath: "",
     // Links stay inert: this is a showcase, not a working shop.

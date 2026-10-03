@@ -26,7 +26,7 @@ const BusinessSchema = new Schema(
     },
     plan: { type: String, enum: ["free", "starter", "business"], default: "free" },
     /**
-     * The seven-day free trial. Both are unset until the owner activates it,
+     * The one-month free trial. Both are unset until the owner activates it,
      * and a business on a paid plan ignores them entirely.
      */
     trialStartedAt: Date,

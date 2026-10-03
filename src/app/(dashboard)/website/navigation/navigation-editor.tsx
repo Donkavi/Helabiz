@@ -44,13 +44,14 @@ export function NavigationEditor({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-      <Card>
+      <Card data-tour="website-navigation-items">
         <CardHeader className="flex-row items-center">
           <CardTitle>Menu items</CardTitle>
           <Button
             size="sm"
             variant="outline"
             className="ml-auto"
+            data-tour="website-navigation-add"
             onClick={() => setItems([...items, { id: uid("nav"), label: "New link", href: "/" }])}
           >
             <Plus className="size-3.5" />
@@ -125,7 +126,7 @@ export function NavigationEditor({
             <p className="flex-1 text-[12.5px] text-muted-foreground">
               {dirty ? "You have unsaved changes." : "Everything is saved."}
             </p>
-            <Button onClick={save} loading={pending} disabled={!dirty}>
+            <Button onClick={save} loading={pending} disabled={!dirty} data-tour="website-navigation-save">
               Save menu
             </Button>
           </div>
@@ -133,7 +134,7 @@ export function NavigationEditor({
       </Card>
 
       <div className="space-y-5">
-        <Card>
+        <Card data-tour="website-navigation-quick">
           <CardHeader>
             <CardTitle>Quick add</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">Add a link to one of your pages.</p>
@@ -154,7 +155,7 @@ export function NavigationEditor({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="website-navigation-preview">
           <CardHeader>
             <CardTitle>Preview</CardTitle>
           </CardHeader>

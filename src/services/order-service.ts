@@ -23,6 +23,8 @@ export type OrderLineInput = {
 
 export type CreateOrderInput = {
   businessId: string;
+  /** A signed-in website customer. Their record is used whatever phone they type. */
+  customerId?: string;
   customer: { name: string; phone: string; email?: string; address?: string; city?: string; district?: string };
   items: OrderLineInput[];
   discount?: number;
@@ -68,9 +70,14 @@ export async function upsertCustomer(
   businessId: string,
   data: { name: string; phone: string; email?: string; address?: string; city?: string; district?: string },
   source = "manual",
+  customerId?: string,
 ) {
   const phone = data.phone.trim();
-  const existing = await Customer.findOne({ businessId, phone });
+  // A signed-in shopper is already known. Matching on the phone they typed
+  // would split their history the moment they deliver to another number.
+  const existing =
+    (customerId ? await Customer.findOne({ _id: customerId, businessId }) : null) ??
+    (await Customer.findOne({ businessId, phone }));
 
   if (existing) {
     existing.name = data.name || existing.name;
@@ -144,7 +151,7 @@ export async function createOrder(input: CreateOrderInput) {
   await connectDB();
 
   const totals = computeTotals(input);
-  const customer = await upsertCustomer(input.businessId, input.customer, input.source);
+  const customer = await upsertCustomer(input.businessId, input.customer, input.source, input.customerId);
   const orderNumber = await nextOrderNumber(input.businessId);
   const status = input.status ?? "pending";
 

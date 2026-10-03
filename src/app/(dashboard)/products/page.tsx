@@ -8,6 +8,7 @@ import { Category } from "@/models/Category";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { productSummary } from "@/lib/products";
 import { ProductsTable } from "./products-table";
 import { CategoryManager } from "./category-manager";
@@ -62,13 +63,14 @@ export default async function ProductsPage({
 
   return (
     <div className="space-y-6">
+      <PageTour id="products" />
       <PageHeader
         title="Products"
         description="Everything you sell. Products added here appear on your website automatically."
         actions={
           <>
             <CategoryManager categories={categoryOptions} />
-            <Button asChild>
+            <Button asChild data-tour="products-add">
               <Link href="/products/new">
                 <Plus className="size-4" />
                 Add product

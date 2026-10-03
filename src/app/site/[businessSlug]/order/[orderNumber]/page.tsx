@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, MapPin, MessageCircle, Package } from "lucide-react";
+import { CheckCircle2, MapPin, MessageCircle, Package, UserRound } from "lucide-react";
+import { currentShopper } from "@/services/shopper-service";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Order } from "@/models/Order";
 import { loadPublishedSite } from "@/lib/website/load-site";
@@ -29,6 +30,8 @@ export default async function OrderConfirmationPage({
 
   const plain = serialize(order);
   const { business } = site.ctx;
+  const accounts = site.ctx.settings.customerAccounts;
+  const shopper = accounts ? await currentShopper(site.businessId) : null;
 
   const waHref =
     business.whatsapp || business.phone
@@ -172,6 +175,16 @@ export default async function OrderConfirmationPage({
             <SiteLink ctx={site.ctx} href="/track" className="w-btn w-btn--outline">
               <MapPin size={15} />
               Track this order
+            </SiteLink>
+          )}
+          {accounts && (
+            <SiteLink
+              ctx={site.ctx}
+              href={shopper ? `/account/orders/${encodeURIComponent(plain.orderNumber)}` : "/account/register"}
+              className="w-btn w-btn--outline"
+            >
+              <UserRound size={15} />
+              {shopper ? "View in my account" : "Create an account to follow your orders"}
             </SiteLink>
           )}
           {waHref && (

@@ -47,7 +47,7 @@ export function ExpensesTable({ expenses }: { expenses: ExpenseRow[] }) {
   const total = visible.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <Card>
+    <Card data-tour="expenses-table">
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>All expenses</CardTitle>
@@ -55,7 +55,7 @@ export function ExpensesTable({ expenses }: { expenses: ExpenseRow[] }) {
             {visible.length} shown · {formatCurrency(total, { decimals: false })}
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div data-tour="expenses-filters" className="flex flex-wrap gap-2">
           <div className="relative min-w-[180px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input

@@ -15,17 +15,28 @@ import { PremiumTemplatePanel } from "@/components/dashboard/premium-template-pa
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createWebsiteAction } from "./actions";
 import { AiGeneratorDialog } from "./ai-generator-dialog";
+import { WebsiteHelpBanner } from "@/components/dashboard/support/website-help-banner";
+import type { RequestStatus } from "@/lib/website-request";
 
 export function TemplateChooser({
   productCount,
   canUsePremium,
   activeAddons = [],
+  offeredAddons,
+  requestStatus,
+  defaultPhone,
 }: {
   productCount: number;
   /** False on the free plan, which builds only from the free designs. */
   canUsePremium: boolean;
   /** Add-ons already paid for, so they are not offered a second time. */
   activeAddons?: string[];
+  /** The add-ons on sale; defaults to all of them. */
+  offeredAddons?: string[];
+  /** Their "build it for me" request, if they have made one. */
+  requestStatus?: RequestStatus | null;
+  /** Prefills the request form. */
+  defaultPhone?: string;
 }) {
   // Never open on a design this plan cannot build from: the sticky bar would
   // say "Starting from Modern Fashion Store" and the server would then refuse
@@ -61,7 +72,9 @@ export function TemplateChooser({
     });
   };
 
-  const offered = ADDON_LIST.filter((addon) => !activeAddons.includes(addon.id));
+  const offered = ADDON_LIST.filter(
+    (addon) => !activeAddons.includes(addon.id) && (!offeredAddons || offeredAddons.includes(addon.id)),
+  );
   const monthly = addonsTotal(wanted);
 
   return (
@@ -100,6 +113,9 @@ export function TemplateChooser({
           </Button>
         </div>
       </div>
+
+      {/* Or have the Helabiz team do it all */}
+      <WebsiteHelpBanner variant="slim" status={requestStatus} defaultPhone={defaultPhone} />
 
       {/* Templates */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -214,7 +230,8 @@ export function TemplateChooser({
         </div>
       )}
 
-      <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
+      {/* Clear of the "Need help?" pill in the corner. */}
+      <div className="sticky bottom-16 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
         <p className="text-[13.5px] text-muted-foreground">
           Starting from{" "}
           <span className="font-semibold text-foreground">

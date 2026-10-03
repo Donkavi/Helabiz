@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import type { SectionNode, ThemeTokens, Viewport } from "@/types";
 import type { SiteContext } from "@/lib/website/render-types";
 import { createSection, getSectionDef, sectionLabel } from "@/lib/website/section-registry";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { EditorProvider, useEditor, type EditorDoc } from "./editor-store";
 import { BuilderToolbar } from "./toolbar";
 import { ComponentLibrary, PALETTE_PREFIX } from "./component-library";
@@ -65,6 +66,7 @@ export function BuilderShell(props: BuilderProps) {
 
   return (
     <EditorProvider initialDoc={props.initialDoc} onSave={save}>
+      <PageTour id="builder" />
       <BuilderLayout {...props} />
     </EditorProvider>
   );
@@ -179,23 +181,24 @@ function BuilderLayout({
         />
 
         <div className="flex min-h-0 flex-1">
-          <aside className="hidden w-[210px] shrink-0 border-r border-sidebar-border md:block">
+          <aside data-tour="builder-library" className="hidden w-[210px] shrink-0 border-r border-sidebar-border md:block">
             <ComponentLibrary />
           </aside>
 
           {showLayers && (
-            <aside className="hidden w-[196px] shrink-0 xl:block">
+            <aside data-tour="builder-layers" className="hidden w-[196px] shrink-0 xl:block">
               <LayersPanel />
             </aside>
           )}
 
-          <main className="min-w-0 flex-1" onClick={() => select(null)}>
+          <main data-tour="builder-canvas" className="min-w-0 flex-1" onClick={() => select(null)}>
             <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
               <Canvas ctx={ctx} dropIndex={dropIndex} sortableIds={sortableIds} />
             </SortableContext>
           </main>
 
-          <aside className="hidden w-[286px] shrink-0 border-l border-sidebar-border lg:block">
+          {/* Holds the selected section's settings, or the website style when nothing is selected. */}
+          <aside data-tour="builder-settings" className="hidden w-[286px] shrink-0 border-l border-sidebar-border lg:block">
             <SettingsPanel fieldCtx={fieldCtx} />
           </aside>
         </div>

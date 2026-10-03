@@ -40,7 +40,7 @@ export function ThemeGallery({ currentThemeId, builderHref }: { currentThemeId: 
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4" data-tour="website-themes-builder">
         <span className="flex size-9 items-center justify-center rounded-lg bg-primary-muted text-primary">
           <Palette className="size-4" />
         </span>
@@ -61,6 +61,7 @@ export function ThemeGallery({ currentThemeId, builderHref }: { currentThemeId: 
           return (
             <article
               key={theme.id}
+              data-tour={active ? "website-themes-current" : undefined}
               className={cn(
                 "overflow-hidden rounded-xl border bg-card transition-all duration-200",
                 active ? "border-primary ring-2 ring-primary/15" : "border-border hover:border-primary/30 hover:shadow-sm",
@@ -106,6 +107,7 @@ export function ThemeGallery({ currentThemeId, builderHref }: { currentThemeId: 
                   className="mt-4 w-full"
                   disabled={active}
                   onClick={() => setConfirm(theme)}
+                  data-tour={active ? undefined : "website-themes-apply"}
                 >
                   {active ? "Current theme" : "Apply theme"}
                 </Button>

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Globe, ShoppingCart, Users } from "lucide-react";
+import { ArrowRight, Building2, Globe, Inbox, MessagesSquare, ShoppingCart, Users } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/permissions/admin";
 import { platformStats, listBusinesses } from "@/services/admin-service";
+import { listWebsiteRequests, openRequestCount, unreadForHelabiz } from "@/services/support-service";
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,13 @@ export const metadata = { title: "Overview" };
 
 export default async function AdminOverviewPage() {
   await requireSuperAdmin();
-  const [stats, recent] = await Promise.all([platformStats(), listBusinesses({ page: 1 })]);
+  const [stats, recent, openRequests, newRequests, unreadMessages] = await Promise.all([
+    platformStats(),
+    listBusinesses({ page: 1 }),
+    openRequestCount(),
+    listWebsiteRequests({ status: "new", perPage: 1 }),
+    unreadForHelabiz(),
+  ]);
 
   const peak = Math.max(1, ...stats.signupsByMonth.map((m) => m.businesses));
 
@@ -48,6 +55,26 @@ export default async function AdminOverviewPage() {
           value={formatNumber(stats.orders.thisMonth)}
           sublabel={`${formatCurrency(stats.orders.revenueThisMonth, { compact: true, decimals: false })} in value`}
           icon={ShoppingCart}
+        />
+      </div>
+
+      {/* Work waiting on the Helabiz team */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StatCard
+          label="Open website requests"
+          value={formatNumber(openRequests)}
+          sublabel={newRequests.total ? `${formatNumber(newRequests.total)} new, waiting for a call` : "None waiting for a call"}
+          icon={Inbox}
+          tone={newRequests.total ? "warning" : "default"}
+          href="/admin/requests"
+        />
+        <StatCard
+          label="Unread support messages"
+          value={formatNumber(unreadMessages)}
+          sublabel={unreadMessages ? "Businesses waiting on a reply" : "All caught up"}
+          icon={MessagesSquare}
+          tone={unreadMessages ? "warning" : "default"}
+          href="/admin/support"
         />
       </div>
 

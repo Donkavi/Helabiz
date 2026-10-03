@@ -10,8 +10,13 @@ import { siteUrlFor } from "@/lib/website/urls";
 import { getSuperAdmin } from "@/lib/permissions/admin";
 import { getLang } from "@/lib/i18n/server";
 import { LangProvider } from "@/lib/i18n/provider";
+import { User } from "@/models/User";
+import { TourProvider } from "@/components/dashboard/tour/tour";
 import { AccessBanner } from "@/components/dashboard/access-banner";
 import { accessInfo } from "@/lib/access";
+import { latestWebsiteRequest, unreadForBusiness } from "@/services/support-service";
+import { unreadForShop } from "@/services/shop-chat-service";
+import { WebsiteHelpNudge } from "@/components/dashboard/support/website-help-nudge";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, business, businessId } = await requireBusiness();
@@ -23,12 +28,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [businesses, ordersThisMonth, notifications, website] = await Promise.all([
-    listUserBusinesses(user.id),
-    Order.countDocuments({ businessId, createdAt: { $gte: startOfMonth } }),
-    Notification.find({ businessId, read: false }).sort({ createdAt: -1 }).limit(8).lean(),
-    Website.findOne({ businessId }).select("subdomain status").lean(),
-  ]);
+  const [businesses, ordersThisMonth, notifications, website, account, supportUnread, websiteRequest, messagesUnread] =
+    await Promise.all([
+      listUserBusinesses(user.id),
+      Order.countDocuments({ businessId, createdAt: { $gte: startOfMonth } }),
+      Notification.find({ businessId, read: false }).sort({ createdAt: -1 }).limit(8).lean(),
+      Website.findOne({ businessId }).select("subdomain status").lean(),
+      User.findById(user.id).select("toursSeen").lean(),
+      unreadForBusiness(businessId),
+      latestWebsiteRequest(businessId),
+      unreadForShop(businessId),
+    ]);
 
   const plan = getPlan(business.plan);
   const usage =
@@ -50,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <LangProvider lang={lang}>
+    <TourProvider seen={account?.toursSeen ?? []}>
     <div className="flex min-h-dvh bg-background" lang={lang}>
       <aside className="hidden w-[248px] shrink-0 border-r border-sidebar-border lg:block">
         <div className="sticky top-0 h-dvh">
@@ -59,6 +70,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             plan={business.plan ?? "free"}
             usage={usage}
             siteUrl={siteUrl}
+            badges={{ messages: messagesUnread }}
           />
         </div>
       </aside>
@@ -72,6 +84,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           plan={business.plan ?? "free"}
           usage={usage}
           siteUrl={siteUrl}
+          supportUnread={supportUnread}
+          messagesUnread={messagesUnread}
           notifications={serialize(notifications).map((n) => ({
             id: String(n._id),
             title: n.title,
@@ -86,6 +100,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
       </div>
     </div>
+    <WebsiteHelpNudge
+      // Gone once they have asked; back if a request was cancelled.
+      show={!websiteRequest || websiteRequest.status === "cancelled"}
+      hasWebsite={Boolean(website)}
+      defaultPhone={business.phone ?? undefined}
+    />
+    </TourProvider>
     </LangProvider>
   );
 }

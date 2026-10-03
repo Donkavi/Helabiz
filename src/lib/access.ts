@@ -3,7 +3,7 @@
  *
  * One idea covers both halves of the lifecycle: a business holds access until
  * a date, and when that date passes the dashboard and the published website
- * both close. For a new business the date comes from the seven-day trial; for
+ * both close. For a new business the date comes from the one-month trial; for
  * a paying one it comes from the period they last paid for. Nothing is ever
  * deleted — this is a gate, not a purge.
  *
@@ -11,7 +11,7 @@
  * date library, so the gates on the server and the countdown in the dashboard
  * chrome share one piece of arithmetic instead of two that drift apart.
  */
-export const TRIAL_DAYS = 7;
+export const TRIAL_DAYS = 30;
 
 /** How long one paid period lasts. Monthly, matching the advertised price. */
 export const PLAN_DAYS = 30;
@@ -74,8 +74,8 @@ export function accessInfo(business: AccessSource, now: Date = new Date()): Acce
       return { state: "trial_expired", daysLeft: 0, endsAt, locked: true, isTrial, isEnding: true };
     }
     const daysLeft = daysBetween(nowMs, endsAt.getTime());
-    // A week is short, so only the last two days shout.
-    return { state: "trial_active", daysLeft, endsAt, locked: false, isTrial, isEnding: daysLeft <= 2 };
+    // A month gives room, so like a paid plan the warning starts five days out.
+    return { state: "trial_active", daysLeft, endsAt, locked: false, isTrial, isEnding: daysLeft <= 5 };
   }
 
   const endsAt = asDate(business.planEndsAt);

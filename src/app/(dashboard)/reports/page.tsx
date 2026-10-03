@@ -14,6 +14,7 @@ import { RevenueChart, ProfitChart, DonutChart } from "@/components/charts/reven
 import { formatCurrency, formatNumber, percentChange } from "@/lib/utils";
 import { dailySeries, daysAgo, summarise, topProducts, websiteMetrics } from "@/services/metrics-service";
 import { productSummary } from "@/lib/products";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { ReportToolbar } from "./report-toolbar";
 
 export const metadata: Metadata = { title: "Reports" };
@@ -78,13 +79,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-6">
+      <PageTour id="reports" />
       <PageHeader
         title="Reports"
         description="Sales, profit and performance over time. Export any table as a CSV."
         actions={<ReportToolbar range={String(days)} />}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-tour="reports-stats" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Sales"
           value={formatCurrency(current.revenue, { decimals: false })}
@@ -115,7 +117,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div data-tour="reports-charts" className="grid gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Sales over time</CardTitle>
@@ -136,7 +138,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <Card>
+        <Card data-tour="reports-best-sellers">
           <CardHeader className="flex-row items-center">
             <CardTitle>Best sellers</CardTitle>
             <span className="ml-auto text-[12.5px] text-muted-foreground">Last {days} days</span>
@@ -186,7 +188,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </Card>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      <div data-tour="reports-summaries" className="grid gap-5 md:grid-cols-3">
         <SummaryCard
           icon={Users}
           title="Customers"

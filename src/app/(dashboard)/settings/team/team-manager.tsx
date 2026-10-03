@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Check, Copy, KeyRound, MoreHorizontal, ShieldCheck, UserPlus } from "lucide-react";
+import { AlertCircle, Check, Copy, HeartHandshake, KeyRound, MoreHorizontal, ShieldCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,8 @@ import {
 import { cn, relativeTime } from "@/lib/utils";
 import { addStaffAction, changeRoleAction, removeMemberAction, setStatusAction, type AddStaffState } from "./actions";
 import type { TeamMember } from "@/services/team-service";
+import { useLang } from "@/lib/i18n/provider";
+import { SUPPORT_UI } from "@/components/dashboard/support/copy";
 
 const ROLE_LABEL: Record<string, string> = {
   owner: "Owner",
@@ -215,6 +217,7 @@ export function TeamManager({
   limit: number;
 }) {
   const router = useRouter();
+  const support = SUPPORT_UI[useLang()];
   const [pending, startTransition] = React.useTransition();
   const [confirmRemove, setConfirmRemove] = React.useState<TeamMember | null>(null);
 
@@ -260,15 +263,24 @@ export function TeamManager({
                   </Badge>
                 )}
               </p>
-              <p className="truncate text-[12.5px] text-muted-foreground">{member.email}</p>
+              <p className="truncate text-[12.5px] text-muted-foreground">
+                {member.support ? support.supportNote : member.email}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
               {member.status === "disabled" && <Badge variant="destructive">Turned off</Badge>}
-              <Badge variant={member.role === "owner" ? "soft" : member.role === "admin" ? "info" : "muted"}>
-                {member.role === "owner" && <ShieldCheck className="size-3" />}
-                {ROLE_LABEL[member.role]}
-              </Badge>
+              {member.support ? (
+                <Badge variant="soft">
+                  <HeartHandshake className="size-3" />
+                  {support.supportBadge}
+                </Badge>
+              ) : (
+                <Badge variant={member.role === "owner" ? "soft" : member.role === "admin" ? "info" : "muted"}>
+                  {member.role === "owner" && <ShieldCheck className="size-3" />}
+                  {ROLE_LABEL[member.role]}
+                </Badge>
+              )}
               <span className="hidden w-28 shrink-0 text-right text-[12px] text-muted-foreground sm:block">
                 {relativeTime(member.joinedAt)}
               </span>
@@ -281,27 +293,36 @@ export function TeamManager({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {member.role === "staff" && isOwner && (
-                      <DropdownMenuItem onClick={() => run(() => changeRoleAction(member.id, "admin"))}>
-                        Make an admin
+                    {/* Helabiz support comes and goes with the job: removing is the only choice. */}
+                    {member.support ? (
+                      <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(member)}>
+                        Remove from business
                       </DropdownMenuItem>
+                    ) : (
+                      <>
+                        {member.role === "staff" && isOwner && (
+                          <DropdownMenuItem onClick={() => run(() => changeRoleAction(member.id, "admin"))}>
+                            Make an admin
+                          </DropdownMenuItem>
+                        )}
+                        {member.role === "admin" && isOwner && (
+                          <DropdownMenuItem onClick={() => run(() => changeRoleAction(member.id, "staff"))}>
+                            Change to staff
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            run(() => setStatusAction(member.id, member.status === "disabled" ? "active" : "disabled"))
+                          }
+                        >
+                          {member.status === "disabled" ? "Turn account back on" : "Turn account off"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(member)}>
+                          Remove from business
+                        </DropdownMenuItem>
+                      </>
                     )}
-                    {member.role === "admin" && isOwner && (
-                      <DropdownMenuItem onClick={() => run(() => changeRoleAction(member.id, "staff"))}>
-                        Change to staff
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() =>
-                        run(() => setStatusAction(member.id, member.status === "disabled" ? "active" : "disabled"))
-                      }
-                    >
-                      {member.status === "disabled" ? "Turn account back on" : "Turn account off"}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(member)}>
-                      Remove from business
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
@@ -317,8 +338,9 @@ export function TeamManager({
           <DialogHeader>
             <DialogTitle>Remove {confirmRemove?.name}?</DialogTitle>
             <DialogDescription>
-              They lose access to this business straight away. Their Helabiz account stays, along with anything they
-              have already recorded here.
+              {confirmRemove?.support
+                ? support.removeSupportBody
+                : "They lose access to this business straight away. Their Helabiz account stays, along with anything they have already recorded here."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

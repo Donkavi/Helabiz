@@ -3,14 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Sparkles } from "lucide-react";
+import { ExternalLink, LifeBuoy, Sparkles } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { NAV_GROUPS, isActive } from "./nav-config";
+import { NAV_GROUPS, isActive, type NavKey } from "./nav-config";
 import { BusinessSwitcher, type BusinessOption } from "./business-switcher";
-import { useT } from "@/lib/i18n/provider";
+import { useLang, useT } from "@/lib/i18n/provider";
 import { fill } from "@/lib/i18n/dashboard";
 import { cn } from "@/lib/utils";
+import { SUPPORT_UI } from "./support/copy";
 
 export function SidebarContent({
   businesses,
@@ -18,6 +19,7 @@ export function SidebarContent({
   plan,
   usage,
   siteUrl,
+  badges,
   onNavigate,
 }: {
   businesses: BusinessOption[];
@@ -25,10 +27,14 @@ export function SidebarContent({
   plan: string;
   usage?: { used: number; limit: number };
   siteUrl?: string | null;
+  /** Counts beside nav items, such as unread customer messages. */
+  badges?: Partial<Record<NavKey, number>>;
   onNavigate?: () => void;
 }) {
   const t = useT();
+  const lang = useLang();
   const pathname = usePathname();
+  const onSupport = pathname.startsWith("/support");
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -44,13 +50,14 @@ export function SidebarContent({
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-4" aria-label={t.nav.dashboard}>
         {NAV_GROUPS.map((group) => (
-          <div key={group.group} className="mb-5 last:mb-0">
+          <div key={group.group} className="mb-5 last:mb-0" data-tour={`nav-${group.group}`}>
             <p className="px-2.5 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground/80">
               {t.nav.groups[group.group]}
             </p>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isActive(pathname, item);
+                const count = badges?.[item.key] ?? 0;
                 return (
                   <li key={item.href}>
                     <Link
@@ -71,6 +78,11 @@ export function SidebarContent({
                         )}
                       />
                       {t.nav[item.key]}
+                      {count > 0 && (
+                        <span className="ml-auto flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1.5 text-[10.5px] font-semibold leading-none text-primary-foreground tabular-nums">
+                          {count > 99 ? "99+" : count}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -92,6 +104,21 @@ export function SidebarContent({
             {t.nav.viewLiveSite}
           </a>
         )}
+
+        <Link
+          href="/support"
+          onClick={onNavigate}
+          aria-current={onSupport ? "page" : undefined}
+          className={cn(
+            "mb-2 flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            onSupport
+              ? "bg-card text-foreground shadow-xs"
+              : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+          )}
+        >
+          <LifeBuoy className={cn("size-3.5", onSupport && "text-primary")} />
+          {SUPPORT_UI[lang].helpAndSupport}
+        </Link>
 
         {plan === "free" && (
           <div className="rounded-xl border border-border bg-card p-3.5">

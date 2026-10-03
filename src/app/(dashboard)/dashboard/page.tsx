@@ -29,6 +29,10 @@ import { RevenueChart, ProfitChart } from "@/components/charts/revenue-chart";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
 import { getLang } from "@/lib/i18n/server";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
+import { PageTour } from "@/components/dashboard/tour/tour";
+import { WebsiteHelpBanner } from "@/components/dashboard/support/website-help-banner";
+import { WebsiteHelpPopup } from "@/components/dashboard/support/website-help-popup";
+import { latestWebsiteRequest } from "@/services/support-service";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: dashboardCopy(await getLang()).home.metaTitle };
@@ -40,10 +44,12 @@ export default async function DashboardPage() {
   const t = c.home;
   const data = await getDashboardData(businessId);
 
-  const [website, productCount] = await Promise.all([
+  const [website, productCount, websiteRequest] = await Promise.all([
     Website.findOne({ businessId }).select("status subdomain").lean(),
     Product.countDocuments({ businessId, status: { $ne: "archived" } }),
+    latestWebsiteRequest(businessId),
   ]);
+  const published = website?.status === "published";
 
   const recentOrders = serialize(data.recentOrders);
   const lowStock = serialize(data.lowStock);
@@ -72,13 +78,24 @@ export default async function DashboardPage() {
         }
       />
 
+      <PageTour id="dashboard" />
+
+      {/* Help from the Helabiz team, for anyone without a live website yet. The
+          popup asks once, after the tour; the banner stays as the way back. */}
+      <WebsiteHelpPopup eligible={!websiteRequest} defaultPhone={business.phone ?? undefined} />
+      {!published && (
+        <WebsiteHelpBanner status={websiteRequest?.status} defaultPhone={business.phone ?? undefined} />
+      )}
+
       {!hasActivity && (
-        <SetupChecklist
-          hasProducts={productCount > 0}
-          hasWebsite={Boolean(website)}
-          isPublished={website?.status === "published"}
-          hasOrders={recentOrders.length > 0}
-        />
+        <div data-tour="setup">
+          <SetupChecklist
+            hasProducts={productCount > 0}
+            hasWebsite={Boolean(website)}
+            isPublished={website?.status === "published"}
+            hasOrders={recentOrders.length > 0}
+          />
+        </div>
       )}
 
       {/* Today */}
@@ -86,7 +103,7 @@ export default async function DashboardPage() {
         <h2 id="today-heading" className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
           {t.today}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="today">
           <StatCard
             label={t.todaysSales}
             value={formatCurrency(data.today.revenue, { decimals: false })}
@@ -134,7 +151,7 @@ export default async function DashboardPage() {
             {t.viewAnalytics}
           </Link>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="web-stats">
           <StatCard label={t.visitors} value={formatNumber(data.web.visitors)} icon={Eye} sublabel={fill(t.pageViews, { count: formatNumber(data.web.pageViews) })} />
           <StatCard label={t.websiteOrders} value={formatNumber(data.web.orders)} icon={Globe} tone="primary" href="/orders?source=website" />
           <StatCard label={t.conversionRate} value={`${data.web.conversionRate.toFixed(1)}%`} sublabel={t.visitorsWhoOrdered} icon={TrendingUp} />

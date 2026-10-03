@@ -10,7 +10,8 @@ import { lastRejectedPaymentFor, openPaymentFor } from "@/services/subscription-
 import { UNLIMITED, limitLabel } from "@/lib/plans";
 import { accessInfo, TRIAL_DAYS } from "@/lib/access";
 import { bankDetails } from "@/lib/bank";
-import { activeAddons, addonStatuses, isAddonId } from "@/lib/addons";
+import { activeAddons, addonStatuses, isAddonId, offeredAddonIds } from "@/lib/addons";
+import { emailReady } from "@/lib/mailer";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { BankTransferPanel, type OpenPayment } from "@/components/billing/bank-transfer-panel";
 import { PlanComparison } from "./plan-comparison";
@@ -46,7 +47,12 @@ export default async function BillingPage({
   const params = await searchParams;
   const requestedPlan = params.plan;
   // Arrives as a comma-separated list, e.g. straight from building a website.
-  const requestedAddons = (params.addons ?? "").split(",").map((id) => id.trim()).filter(isAddonId);
+  const offered = offeredAddonIds(emailReady());
+  const requestedAddons = (params.addons ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(isAddonId)
+    .filter((id) => offered.includes(id));
   await connectDB();
 
   const [usage, payments, open, rejected] = await Promise.all([
@@ -59,7 +65,8 @@ export default async function BillingPage({
   const bank = bankDetails();
   const access = accessInfo(business);
   const live = [...activeAddons(business)];
-  const addons = addonStatuses(business);
+  // One not on sale is still shown to a shop already paying for it.
+  const addons = addonStatuses(business).filter((status) => status.active || offered.includes(status.addon.id));
   const badge = accessBadge(access);
   const openRow = open ? (serialize(open) as Record<string, unknown>) : null;
   const rejectedRow = rejected ? (serialize(rejected) as Record<string, unknown>) : null;
@@ -128,6 +135,7 @@ export default async function BillingPage({
             initialPlan={access.isTrial ? undefined : (business.plan ?? undefined)}
             requestedPlan={requestedPlan === "starter" || requestedPlan === "business" ? requestedPlan : undefined}
             activeAddons={live}
+            offeredAddons={offered}
             requestedAddons={requestedAddons}
             // A shop already inside a paid month can buy add-ons on their own.
             planOptional={access.state === "plan_active"}

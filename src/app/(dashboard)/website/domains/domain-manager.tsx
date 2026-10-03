@@ -69,7 +69,7 @@ export function DomainManager({
         <CardTitle>Your own domain</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
-        <form action={action} className="flex flex-wrap items-end gap-2">
+        <form action={action} className="flex flex-wrap items-end gap-2" data-tour="website-domains-add">
           <div className="min-w-[220px] flex-1 space-y-1.5">
             <Label htmlFor="hostname">Domain name</Label>
             <Input
@@ -100,7 +100,7 @@ export function DomainManager({
             }
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-3" data-tour="website-domains-list">
             {domains.map((domain) => (
               <li key={domain.id} className="rounded-xl border border-border p-4">
                 <div className="flex flex-wrap items-center gap-3">

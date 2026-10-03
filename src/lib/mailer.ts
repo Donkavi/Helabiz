@@ -20,9 +20,45 @@ export type Mail = {
   text: string;
   html?: string;
   replyTo?: string;
+  /** Overrides MAIL_FROM — a shop's own address from `shopSender`. */
+  from?: { name: string; address: string };
 };
 
 export type MailResult = { sent: boolean; reason?: string };
+
+/**
+ * The domain shops send from, e.g. "mail.helabiz.lk", or null to send
+ * everything from MAIL_FROM.
+ *
+ * It must be a domain the SMTP provider has verified (SPF and DKIM), or
+ * messages from it will be rejected or land in spam. A subdomain rather than
+ * helabiz.lk itself keeps one careless shop from hurting the reputation of
+ * Helabiz's own mail.
+ */
+export function shopMailDomain() {
+  const domain = process.env.MAIL_SHOP_DOMAIN?.trim().toLowerCase();
+  return domain && /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domain) ? domain : null;
+}
+
+/** "kavi-fashion@mail.helabiz.lk", or null when shops do not get their own address. */
+export function shopSenderAddress(slug: string) {
+  const domain = shopMailDomain();
+  const local = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "").slice(0, 64);
+  return domain && local ? `${local}@${domain}` : null;
+}
+
+/**
+ * The From for mail a shop sends its customers: the shop's name on the shop's
+ * own address. Undefined when no shop domain is configured, which leaves
+ * `sendMail` on MAIL_FROM.
+ */
+export function shopSender(shop: { name: string; slug: string }): Mail["from"] {
+  const address = shopSenderAddress(shop.slug);
+  if (!address) return undefined;
+  // Nodemailer quotes the name, but a line break must never reach a header.
+  const name = shop.name.replace(/[\r\n"<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 70);
+  return { name: name || "Shop", address };
+}
 
 type SmtpConfig = {
   host: string;
@@ -53,6 +89,11 @@ function smtpConfig(): SmtpConfig | null {
 /** Whether mail can actually leave the building, for the admin panel to report. */
 export function mailBackend() {
   return smtpConfig() ? "smtp" : "none";
+}
+
+/** Whether email can be sent at all. Features that only work by email hide without it. */
+export function emailReady() {
+  return smtpConfig() !== null;
 }
 
 /**
@@ -96,7 +137,7 @@ export async function sendMail(mail: Mail): Promise<MailResult> {
 
   try {
     await transportFor(config).sendMail({
-      from: config.from,
+      from: mail.from ?? config.from,
       to: mail.to,
       subject: mail.subject,
       text: mail.text,

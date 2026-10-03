@@ -43,6 +43,7 @@ export type SiteSettings = {
   showCart: boolean;
   allowCheckout: boolean;
   whatsappOrdering: boolean;
+  customerAccounts: boolean;
   announcement?: string;
   announcementEnabled?: boolean;
 };

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, MapPin, MessageCircle, Phone, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, MessageCircle, MessagesSquare, Phone, ShoppingCart } from "lucide-react";
 import { requireBusiness } from "@/lib/permissions";
 import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Customer } from "@/models/Customer";
 import { Order } from "@/models/Order";
+import { ShopMessage } from "@/models/ShopMessage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,18 +15,28 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { formatCurrency, formatDate, initials, relativeTime } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
+import { getLang } from "@/lib/i18n/server";
+import { fill } from "@/lib/i18n/dashboard";
+import { MESSAGES_UI } from "@/components/dashboard/messages/copy";
+import { WebsiteAccountCard } from "./website-account-card";
 
 export const metadata: Metadata = { title: "Customer" };
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { businessId } = await requireBusiness();
+  const { businessId, business } = await requireBusiness();
   const { id } = await params;
   await connectDB();
 
   const customer = await Customer.findOne({ _id: id, businessId }).lean();
   if (!customer) notFound();
 
-  const orders = serialize(await Order.find({ businessId, customerId: id }).sort({ createdAt: -1 }).limit(50).lean());
+  const [orderRows, hasChat, chatUnread] = await Promise.all([
+    Order.find({ businessId, customerId: id }).sort({ createdAt: -1 }).limit(50).lean(),
+    ShopMessage.exists({ businessId, customerId: id }),
+    ShopMessage.countDocuments({ businessId, customerId: id, from: "customer", readAt: null }),
+  ]);
+  const orders = serialize(orderRows);
+  const messagesCopy = MESSAGES_UI[await getLang()];
   const plain = serialize(customer);
   const averageOrder = plain.totalOrders ? (plain.totalSpent ?? 0) / plain.totalOrders : 0;
 
@@ -114,6 +125,26 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </Card>
 
         <div className="space-y-5">
+          {hasChat && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessagesSquare className="size-4 text-primary" />
+                  {messagesCopy.customerCardTitle}
+                  {chatUnread > 0 && (
+                    <Badge className="ml-auto">{fill(messagesCopy.unread, { count: chatUnread })}</Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2">
+                <p className="text-[13px] text-muted-foreground">{messagesCopy.customerCardBody}</p>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={`/messages?customer=${String(plain._id)}`}>{messagesCopy.customerCardCta}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Contact</CardTitle>
@@ -137,6 +168,18 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               )}
             </CardContent>
           </Card>
+
+          {plain.account?.createdAt && (
+            <WebsiteAccountCard
+              customerId={String(plain._id)}
+              customerName={plain.name}
+              phone={plain.phone}
+              email={plain.account.email ?? undefined}
+              createdAt={String(plain.account.createdAt)}
+              lastSignInAt={plain.account.lastSignInAt ? String(plain.account.lastSignInAt) : undefined}
+              businessName={business.name}
+            />
+          )}
 
           {plain.notes && (
             <Card>

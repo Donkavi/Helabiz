@@ -7,6 +7,12 @@ const BusinessMemberSchema = new Schema(
     role: { type: String, enum: ["owner", "admin", "staff"], default: "staff" },
     invitedEmail: String,
     status: { type: String, enum: ["active", "invited", "disabled"], default: "active" },
+    /**
+     * A Helabiz team member let in to build or fix this business's website at
+     * its request. Shown to the owner as "Helabiz support", never counted
+     * against the plan's team limit, and removed when the job is closed.
+     */
+    support: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

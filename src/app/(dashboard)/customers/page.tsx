@@ -7,6 +7,7 @@ import { Customer } from "@/models/Customer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { CustomersTable } from "./customers-table";
 import { CustomerDialog } from "./customer-dialog";
 import { formatCurrency } from "@/lib/utils";
@@ -47,13 +48,14 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-6">
+      <PageTour id="customers" />
       <PageHeader
         title="Customers"
         description="Everyone who has ordered from you — website buyers are added automatically."
         actions={<CustomerDialog />}
       >
         {customers.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
+          <div data-tour="customers-summary" className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
             <span>
               <span className="font-semibold text-foreground">{customers.length}</span> customers
             </span>
@@ -75,7 +77,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           description="Anyone who orders from your website is added here with their contact details and order history. You can also add customers by hand."
           action={<CustomerDialog />}
           secondaryAction={
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild data-tour="customers-record-order">
               <Link href="/orders/new">Record an order</Link>
             </Button>
           }

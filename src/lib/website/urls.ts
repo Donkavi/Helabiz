@@ -9,6 +9,26 @@
 export const SITE_DOMAIN = process.env.NEXT_PUBLIC_SITE_DOMAIN || "helabiz.lk";
 
 /**
+ * Labels under SITE_DOMAIN that can never be a shop's address: the product's
+ * own hosts, and the subdomain shop email is sent from. A shop called "mail"
+ * would otherwise be handed `mail.helabiz.lk`, whose DNS belongs to email.
+ */
+const mailLabel = (() => {
+  const domain = process.env.MAIL_SHOP_DOMAIN?.trim().toLowerCase() ?? "";
+  return domain.endsWith(`.${SITE_DOMAIN}`) ? domain.slice(0, -(SITE_DOMAIN.length + 1)).split(".").pop() : undefined;
+})();
+
+export const RESERVED_SUBDOMAINS: ReadonlySet<string> = new Set(
+  ["www", "app", "admin", "api", "sites", "mail", "email", "webmail", "smtp", "mx", "shops", mailLabel].filter(
+    (label): label is string => Boolean(label),
+  ),
+);
+
+export function isReservedSubdomain(label: string) {
+  return RESERVED_SUBDOMAINS.has(label.toLowerCase());
+}
+
+/**
  * Local vs production is decided by the build, not by `NEXT_PUBLIC_APP_URL`.
  * That value is inlined at build time, so a `.env` with `localhost` in it that
  * reaches the production build would otherwise point every shop link there.

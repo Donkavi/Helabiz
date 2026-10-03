@@ -25,6 +25,7 @@ type Initial = {
   showCart: boolean;
   allowCheckout: boolean;
   whatsappOrdering: boolean;
+  customerAccounts: boolean;
   announcementEnabled: boolean;
   announcement: string;
   logo: string;
@@ -50,7 +51,7 @@ export function WebsiteSettingsForm({ initial, businessName }: { initial: Initia
   return (
     <form action={action} className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
       <div className="space-y-5">
-        <Card>
+        <Card data-tour="website-settings-address">
           <CardHeader>
             <CardTitle>Web address</CardTitle>
           </CardHeader>
@@ -93,7 +94,7 @@ export function WebsiteSettingsForm({ initial, businessName }: { initial: Initia
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="website-settings-seo">
           <CardHeader>
             <CardTitle>Search engine listing</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">How your website appears in Google results.</p>
@@ -137,7 +138,7 @@ export function WebsiteSettingsForm({ initial, businessName }: { initial: Initia
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="website-settings-shop">
           <CardHeader>
             <CardTitle>Shop behaviour</CardTitle>
           </CardHeader>
@@ -163,10 +164,18 @@ export function WebsiteSettingsForm({ initial, businessName }: { initial: Initia
               checked={values.whatsappOrdering}
               onChange={(v) => setValues({ ...values, whatsappOrdering: v })}
             />
+            <ToggleRow
+              name="customerAccounts"
+              label="Customer accounts"
+              tour="website-settings-accounts"
+              hint="Customers can register with their phone and email, then sign in to see their orders and track them."
+              checked={values.customerAccounts}
+              onChange={(v) => setValues({ ...values, customerAccounts: v })}
+            />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="website-settings-announcement">
           <CardHeader>
             <CardTitle>Announcement bar</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">A thin strip above your header, on every page.</p>
@@ -195,7 +204,7 @@ export function WebsiteSettingsForm({ initial, businessName }: { initial: Initia
       </div>
 
       <div className="space-y-5">
-        <Card className="lg:sticky lg:top-20">
+        <Card className="lg:sticky lg:top-20" data-tour="website-settings-logo">
           <CardHeader>
             <CardTitle>Logo</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">
@@ -246,17 +255,20 @@ function ToggleRow({
   name,
   label,
   hint,
+  tour,
   checked,
   onChange,
 }: {
   name: string;
   label: string;
   hint?: string;
+  /** Lets the guided tour point at this row. */
+  tour?: string;
   checked: boolean;
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-0">
+    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-0" data-tour={tour}>
       {/* Switch is not a native input, so the value is mirrored for the form post. */}
       <input type="hidden" name={name} value={checked ? "true" : "false"} />
       <div>

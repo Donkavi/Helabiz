@@ -281,6 +281,7 @@ export async function businessDetail(businessId: string) {
       email: userById.get(String(m.userId))?.email ?? "—",
       role: m.role,
       status: m.status,
+      support: Boolean(m.support),
     })),
     counts: { orders, products, customers, revenue: revenue[0]?.total ?? 0 },
     website: website

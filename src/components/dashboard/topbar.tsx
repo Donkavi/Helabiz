@@ -4,7 +4,20 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Bell, LogOut, Menu, Monitor, Moon, Plus, Search, Settings, ShieldCheck, Sun, User as UserIcon } from "lucide-react";
+import {
+  Bell,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Monitor,
+  Moon,
+  Plus,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sun,
+  User as UserIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -23,6 +36,8 @@ import { NAV_GROUPS, isActive } from "./nav-config";
 import { useLang, useT } from "@/lib/i18n/provider";
 import { LanguageToggle } from "@/components/marketing/language-toggle";
 import { initials } from "@/lib/utils";
+import { fill } from "@/lib/i18n/dashboard";
+import { SUPPORT_UI } from "./support/copy";
 
 export function Topbar({
   user,
@@ -33,6 +48,8 @@ export function Topbar({
   siteUrl,
   notifications,
   isSuperAdmin,
+  supportUnread = 0,
+  messagesUnread = 0,
 }: {
   user: { name: string; email: string; image?: string };
   businesses: BusinessOption[];
@@ -43,6 +60,10 @@ export function Topbar({
   notifications: { id: string; title: string; body?: string; href?: string; createdAt: string }[];
   /** Platform administrators get a way into the admin panel. */
   isSuperAdmin?: boolean;
+  /** Messages from the Helabiz team not yet opened. */
+  supportUnread?: number;
+  /** Customer chat messages not yet opened, for the Messages nav item. */
+  messagesUnread?: number;
 }) {
   const t = useT();
   const lang = useLang();
@@ -52,6 +73,9 @@ export function Topbar({
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const current = NAV_GROUPS.flatMap((g) => g.items).find((item) => isActive(pathname, item));
+  const support = SUPPORT_UI[lang];
+  // On the chat itself they are being read as they arrive.
+  const unread = pathname.startsWith("/support") ? 0 : supportUnread;
 
   return (
     <header className="sticky top-0 z-30 flex h-15 shrink-0 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-xl lg:px-6">
@@ -69,6 +93,7 @@ export function Topbar({
             plan={plan}
             usage={usage}
             siteUrl={siteUrl}
+            badges={{ messages: messagesUnread }}
             onNavigate={() => setMobileOpen(false)}
           />
         </SheetContent>
@@ -86,10 +111,24 @@ export function Topbar({
       </button>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>
+        <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild data-tour="new-order">
           <Link href="/orders/new">
             <Plus className="size-3.5" />
             {t.topbar.newOrder}
+          </Link>
+        </Button>
+
+        <Button variant="ghost" size="icon-sm" className="relative" asChild title={support.chatMenu}>
+          <Link
+            href="/support"
+            aria-label={unread > 0 ? `${support.chatMenu} (${fill(support.unread, { count: unread })})` : support.chatMenu}
+          >
+            <MessageCircle />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground ring-2 ring-background">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
           </Link>
         </Button>
 
@@ -121,7 +160,9 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <LanguageToggle current={lang} className="hidden sm:flex" />
+        <div className="hidden sm:flex" data-tour="language">
+          <LanguageToggle current={lang} />
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

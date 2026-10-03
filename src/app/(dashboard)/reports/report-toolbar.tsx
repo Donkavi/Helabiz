@@ -28,7 +28,7 @@ export function ReportToolbar({ range }: { range: string }) {
   return (
     <div className="flex items-center gap-2">
       <Select value={range} onValueChange={(value) => router.push(`/reports?range=${value}`)}>
-        <SelectTrigger className="w-[150px]" aria-label="Date range">
+        <SelectTrigger className="w-[150px]" aria-label="Date range" data-tour="reports-range">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -41,7 +41,7 @@ export function ReportToolbar({ range }: { range: string }) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">
+          <Button variant="outline" data-tour="reports-export">
             <Download className="size-4" />
             Export CSV
           </Button>

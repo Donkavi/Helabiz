@@ -2,7 +2,7 @@ import "server-only";
 import { connectDB } from "@/lib/db/mongoose";
 import { Business } from "@/models/Business";
 import { hasAddon } from "@/lib/addons";
-import { sendMail } from "@/lib/mailer";
+import { sendMail, shopSender } from "@/lib/mailer";
 import { formatCurrency } from "@/lib/utils";
 import { siteUrlFor } from "@/lib/website/urls";
 import type { OrderStatus } from "@/types";
@@ -28,7 +28,7 @@ type MailableOrder = {
 const STATUS_LINE: Record<string, string> = {
   pending: "We have your order and will confirm it shortly.",
   confirmed: "Your order is confirmed and we are getting it ready.",
-  processing: "We are packing your order now.",
+  packed: "We are packing your order now.",
   shipped: "Your order is on its way.",
   delivered: "Your order has been delivered. Thank you.",
   cancelled: "Your order has been cancelled. Get in touch if that is unexpected.",
@@ -36,13 +36,13 @@ const STATUS_LINE: Record<string, string> = {
 
 const STATUS_SUBJECT: Record<string, string> = {
   confirmed: "Order {n} confirmed",
-  processing: "Order {n} is being packed",
+  packed: "Order {n} is being packed",
   shipped: "Order {n} is on its way",
   delivered: "Order {n} has been delivered",
   cancelled: "Order {n} has been cancelled",
 };
 
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -104,6 +104,8 @@ async function context(businessId: string) {
     name: business.name,
     // A reply should reach the shop, not a no-reply address nobody reads.
     replyTo: business.email ?? undefined,
+    // The shop's own address when one is configured, so customers see who wrote.
+    from: shopSender({ name: business.name, slug: business.slug }),
     emails: hasAddon(business, "order_email"),
     trackUrl: hasAddon(business, "order_tracking") ? `${siteUrlFor(business.slug)}/track` : undefined,
   };
@@ -132,6 +134,7 @@ export async function sendOrderPlacedEmail(businessId: string, order: MailableOr
       text,
       html,
       replyTo: shop.replyTo,
+      from: shop.from,
     });
   } catch (error) {
     // Never let the confirmation email cost someone their order.
@@ -161,6 +164,7 @@ export async function sendOrderStatusEmail(businessId: string, order: MailableOr
       text,
       html,
       replyTo: shop.replyTo,
+      from: shop.from,
     });
   } catch (error) {
     console.error("[mail] order status email failed", error);

@@ -37,6 +37,8 @@ const WebsiteSchema = new Schema(
       showCart: { type: Boolean, default: true },
       allowCheckout: { type: Boolean, default: true },
       whatsappOrdering: { type: Boolean, default: true },
+      /** Shoppers can register and sign in to see their orders. */
+      customerAccounts: { type: Boolean, default: true },
       announcement: String,
       announcementEnabled: { type: Boolean, default: false },
       passwordProtect: { type: Boolean, default: false },

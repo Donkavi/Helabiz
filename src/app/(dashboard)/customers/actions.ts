@@ -7,6 +7,8 @@ import { Customer } from "@/models/Customer";
 import { Order } from "@/models/Order";
 import { customerSchema } from "@/lib/validations/business";
 import { fieldErrorsFrom, type ActionState } from "@/lib/validations/errors";
+import { Types } from "mongoose";
+import { createShopperResetLink, OWNER_RESET_HOURS } from "@/services/shopper-service";
 
 export async function saveCustomerAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { businessId } = await requireBusiness();
@@ -54,4 +56,18 @@ export async function deleteCustomerAction(id: string) {
   await Order.updateMany({ businessId, customerId: id }, { $unset: { customerId: "" } });
   revalidatePath("/customers");
   return { ok: true as const };
+}
+
+/**
+ * A one-time link that lets a customer choose a new password for their
+ * account on the shop's website. The owner sends it themselves, usually by
+ * WhatsApp, which is how resets work while the site cannot send email.
+ */
+export async function createPasswordResetLinkAction(customerId: string) {
+  const { businessId, business } = await requireBusiness();
+  if (!Types.ObjectId.isValid(customerId)) return { ok: false as const, error: "Customer not found" };
+
+  const link = await createShopperResetLink(businessId, business.slug, customerId);
+  if (!link) return { ok: false as const, error: "This customer has no website account" };
+  return { ok: true as const, link, hours: OWNER_RESET_HOURS };
 }

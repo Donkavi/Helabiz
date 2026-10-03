@@ -100,7 +100,7 @@ export function CustomerDialog({
       {controlledOpen === undefined && (
         <DialogTrigger asChild>
           {trigger ?? (
-            <Button>
+            <Button data-tour="customers-add">
               <Plus className="size-4" />
               Add customer
             </Button>

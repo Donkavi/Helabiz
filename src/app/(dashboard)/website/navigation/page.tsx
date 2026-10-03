@@ -5,6 +5,7 @@ import { connectDB, serialize } from "@/lib/db/mongoose";
 import { Website } from "@/models/Website";
 import { WebsitePage } from "@/models/WebsitePage";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTour } from "@/components/dashboard/tour/tour";
 import { asNavigation } from "@/services/website-service";
 import { NavigationEditor } from "./navigation-editor";
 
@@ -27,6 +28,7 @@ export default async function WebsiteNavigationPage() {
 
   return (
     <div className="space-y-6">
+      <PageTour id="website-navigation" />
       <PageHeader
         title="Navigation"
         description="The menu at the top of your website. Add links to pages, products or anywhere else."

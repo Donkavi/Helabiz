@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatNumber, relativeTime } from "@/lib/utils";
 import { storageBackend, viewableUrl } from "@/lib/storage";
 import { ADDONS, type AddonId } from "@/lib/addons";
-import { mailBackend } from "@/lib/mailer";
+import { mailBackend, shopMailDomain } from "@/lib/mailer";
 import { Pagination } from "../pagination";
 import { PaymentReview } from "./payment-review";
 
@@ -52,7 +52,9 @@ export default async function AdminPaymentsPage({
         title="Payments"
         description={`${formatNumber(total)} ${STATUS_LABEL[status]?.toLowerCase() ?? status}. Slips are stored in ${
           storageBackend() === "cloudinary" ? "Cloudinary" : "local uploads"
-        }. Order email is ${mailBackend() === "smtp" ? "configured" : "not configured"}.`}
+        }. Order email is ${mailBackend() === "smtp" ? "configured" : "not configured"}${
+          shopMailDomain() ? `, and shops send from @${shopMailDomain()}` : ", and shops send from MAIL_FROM"
+        }.`}
       />
 
       <Card>

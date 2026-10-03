@@ -31,6 +31,7 @@ import { uniqueSlug } from "@/services/business-service";
 import { cloneSection } from "@/lib/website/section-registry";
 import { getTheme } from "@/lib/website/themes";
 import { slugify } from "@/lib/utils";
+import { isReservedSubdomain } from "@/lib/website/urls";
 import type { SectionNode } from "@/types";
 
 const PREMIUM_TEMPLATE_MESSAGE =
@@ -344,6 +345,7 @@ const settingsSchema = z.object({
   showCart: z.coerce.boolean().default(true),
   allowCheckout: z.coerce.boolean().default(true),
   whatsappOrdering: z.coerce.boolean().default(true),
+  customerAccounts: z.coerce.boolean().default(true),
   announcementEnabled: z.coerce.boolean().default(false),
   announcement: z.string().max(160).optional().or(z.literal("")),
 });
@@ -357,12 +359,17 @@ export async function saveWebsiteSettingsAction(_prev: ActionState, formData: Fo
     showCart: raw.showCart === "on" || raw.showCart === "true",
     allowCheckout: raw.allowCheckout === "on" || raw.allowCheckout === "true",
     whatsappOrdering: raw.whatsappOrdering === "on" || raw.whatsappOrdering === "true",
+    customerAccounts: raw.customerAccounts === "on" || raw.customerAccounts === "true",
     announcementEnabled: raw.announcementEnabled === "on" || raw.announcementEnabled === "true",
   });
   if (!parsed.success) return { ok: false, fieldErrors: fieldErrorsFrom(parsed.error) };
 
   const website = await websiteFor(businessId);
   if (!website) return { ok: false, error: "No website yet" };
+
+  if (parsed.data.subdomain !== website.subdomain && isReservedSubdomain(parsed.data.subdomain)) {
+    return { ok: false, fieldErrors: { subdomain: "That address is reserved. Please choose another" } };
+  }
 
   if (parsed.data.subdomain !== website.subdomain) {
     const taken = await Website.findOne({ subdomain: parsed.data.subdomain, _id: { $ne: website._id } })
@@ -382,6 +389,7 @@ export async function saveWebsiteSettingsAction(_prev: ActionState, formData: Fo
         "settings.showCart": parsed.data.showCart,
         "settings.allowCheckout": parsed.data.allowCheckout,
         "settings.whatsappOrdering": parsed.data.whatsappOrdering,
+        "settings.customerAccounts": parsed.data.customerAccounts,
         "settings.announcementEnabled": parsed.data.announcementEnabled,
         "settings.announcement": parsed.data.announcement || undefined,
         hasUnpublishedChanges: true,

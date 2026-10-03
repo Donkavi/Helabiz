@@ -33,6 +33,8 @@ type Props = {
   initialPlan?: string;
   /** Add-ons already paid for, which need buying again only once they lapse. */
   activeAddons?: string[];
+  /** The add-ons on sale; defaults to all of them. */
+  offeredAddons?: string[];
   /** Add-ons the owner arrived asking for, e.g. straight from building a site. */
   requestedAddons?: string[];
   /** On a paid plan the plan step is optional: add-ons can be bought alone. */
@@ -92,6 +94,7 @@ export function BankTransferPanel({
   initialPlan,
   requestedPlan,
   activeAddons = [],
+  offeredAddons,
   requestedAddons = [],
   planOptional,
 }: Props) {
@@ -250,7 +253,7 @@ export function BankTransferPanel({
         </p>
 
         <div className="mt-3 space-y-2">
-          {ADDON_LIST.map((addon) => {
+          {ADDON_LIST.filter((addon) => !offeredAddons || offeredAddons.includes(addon.id)).map((addon) => {
             const already = activeAddons.includes(addon.id);
             const ticked = addons.includes(addon.id);
             return (
