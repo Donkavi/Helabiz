@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Helabiz",
+    "slug": "helabiz",
+    "scheme": "helabiz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FDFDFC",
+    "ios": {
+      "bundleIdentifier": "lk.helabiz.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "lk.helabiz.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FDFDFC",
+          "dark": { "backgroundColor": "#0E0F12" }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0D7E67"
+        }
+      ]
+    ]
+  }
+}

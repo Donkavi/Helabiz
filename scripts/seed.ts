@@ -200,6 +200,10 @@ async function main() {
   let orderCount = 0;
   for (let day = 45; day >= 0; day -= 1) {
     const ordersToday = day < 14 ? randomInt(0, 3) : randomInt(0, 2);
+    // Hours before "now" on that day, latest offset first, so each order is
+    // dated after the one before it. `nextOrderNumber` reads the newest order
+    // by date; out-of-order dates would hand out a number twice.
+    const hoursBack = Array.from({ length: ordersToday }, () => randomInt(0, 20)).sort((a, b) => b - a);
     for (let i = 0; i < ordersToday; i += 1) {
       const customer = pick(CUSTOMERS);
       const lineCount = randomInt(1, 3);
@@ -240,8 +244,11 @@ async function main() {
         source: Math.random() > 0.35 ? "website" : pick(["whatsapp", "manual", "instagram"] as const),
       });
 
-      const created = new Date(Date.now() - day * 864e5 - randomInt(0, 20) * 36e5);
-      await Order.updateOne({ _id: order._id }, { $set: { createdAt: created, updatedAt: created } });
+      // The minutes term breaks ties between orders drawn for the same hour.
+      const created = new Date(Date.now() - day * 864e5 - hoursBack[i] * 36e5 - (ordersToday - i) * 6e4);
+      // Through the driver: Mongoose treats `createdAt` as immutable and would
+      // silently drop it, leaving every demo order dated today.
+      await Order.collection.updateOne({ _id: order._id }, { $set: { createdAt: created, updatedAt: created } });
       orderCount += 1;
     }
   }

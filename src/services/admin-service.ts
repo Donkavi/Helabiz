@@ -17,6 +17,7 @@ import { Expense } from "@/models/Expense";
 import { InventoryMovement } from "@/models/InventoryMovement";
 import { Invoice } from "@/models/Invoice";
 import { Media } from "@/models/Media";
+import { MobileDevice } from "@/models/MobileDevice";
 import { Notification } from "@/models/Notification";
 import { Payment } from "@/models/Payment";
 import { WebsitePage } from "@/models/WebsitePage";
@@ -524,8 +525,9 @@ export async function deleteBusinessCascade(businessId: string): Promise<DeleteR
 
 export async function deleteUser(userId: string) {
   await connectDB();
-  // Memberships go; the audit trail stays, same reasoning as above.
+  // Memberships and signed-in phones go; the audit trail stays, same reasoning as above.
   await BusinessMember.deleteMany({ userId });
+  await MobileDevice.deleteMany({ userId });
   await User.deleteOne({ _id: userId });
 }
 

@@ -259,6 +259,16 @@ Rate limiting is in-memory (`lib/rate-limit.ts`) — correct for a single instan
 
 ---
 
+## Mobile app
+
+`mobile/` is an Expo app for business owners: dashboard, analytics, orders and customer chat, with push notifications
+for new website orders and customer messages. It is a separate project with its own `package.json`. The web app's
+TypeScript, ESLint and Vercel deployment all ignore it. It talks to the bearer-token routes under `/api/mobile/*`,
+and pushes are sent by `src/services/push-service.ts`. Setup, builds and push credentials are in
+[mobile/README.md](mobile/README.md).
+
+---
+
 ## Subdomains
 
 Published sites are served from `/site/<business-slug>`. `src/proxy.ts` rewrites `<subdomain>.<SITE_DOMAIN>` onto

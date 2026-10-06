@@ -6,6 +6,7 @@ import { Customer } from "@/models/Customer";
 import { InventoryMovement } from "@/models/InventoryMovement";
 import { Notification } from "@/models/Notification";
 import { sendOrderPlacedEmail, sendOrderStatusEmail } from "@/services/order-mail";
+import { pushToBusiness } from "@/services/push-service";
 import { REVENUE_STATUSES } from "./metrics-service";
 import { productSummary } from "@/lib/products";
 import type { OrderSource, OrderStatus, PaymentMethod, PaymentStatus } from "@/types";
@@ -184,12 +185,21 @@ export async function createOrder(input: CreateOrderInput) {
   await recalculateCustomerTotals(input.businessId, String(customer._id));
 
   if (input.source === "website") {
+    const title = `New website order ${orderNumber}`;
+    const body = `${input.customer.name} · ${totals.total.toLocaleString("en-LK")} LKR`;
     await Notification.create({
       businessId: input.businessId,
       type: "order",
-      title: `New website order ${orderNumber}`,
-      body: `${input.customer.name} · ${totals.total.toLocaleString("en-LK")} LKR`,
+      title,
+      body,
       href: `/orders/${order._id}`,
+    });
+    // The owner's phone, so an order is seen without the dashboard open.
+    await pushToBusiness(input.businessId, {
+      title,
+      body,
+      channel: "orders",
+      data: { type: "order", orderId: String(order._id) },
     });
   }
 

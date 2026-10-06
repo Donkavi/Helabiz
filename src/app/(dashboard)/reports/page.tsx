@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import { Types } from "mongoose";
 import { BarChart3, Package, TrendingUp, Users, Wallet } from "lucide-react";
 import { requireBusiness } from "@/lib/permissions";
-import { connectDB } from "@/lib/db/mongoose";
-import { Expense } from "@/models/Expense";
-import { Customer } from "@/models/Customer";
-import { Product } from "@/models/Product";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RevenueChart, ProfitChart, DonutChart } from "@/components/charts/revenue-chart";
 import { formatCurrency, formatNumber, percentChange } from "@/lib/utils";
-import { dailySeries, daysAgo, summarise, topProducts, websiteMetrics } from "@/services/metrics-service";
-import { productSummary } from "@/lib/products";
+import { getReportData } from "@/services/metrics-service";
 import { PageTour } from "@/components/dashboard/tour/tour";
 import { ReportToolbar } from "./report-toolbar";
 
@@ -26,56 +20,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const days = RANGES[(params.range as keyof typeof RANGES) ?? "30"] ?? 30;
 
-  await connectDB();
-  const oid = new Types.ObjectId(businessId);
-  const from = daysAgo(days - 1);
-  const previousFrom = daysAgo(days * 2 - 1);
-
-  const [current, previous, series, top, expenseSplit, customerStats, inventoryValue, web] = await Promise.all([
-    summarise(businessId, { from, to: new Date() }),
-    summarise(businessId, { from: previousFrom, to: from }),
-    dailySeries(businessId, days),
-    topProducts(businessId, 10, from),
-    Expense.aggregate<{ _id: string; total: number }>([
-      { $match: { businessId: oid, date: { $gte: from } } },
-      { $group: { _id: "$category", total: { $sum: "$amount" } } },
-      { $sort: { total: -1 } },
-    ]),
-    Customer.aggregate<{ _id: null; total: number; repeat: number; spend: number }>([
-      { $match: { businessId: oid } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          repeat: { $sum: { $cond: [{ $gt: ["$totalOrders", 1] }, 1, 0] } },
-          spend: { $sum: "$totalSpent" },
-        },
-      },
-    ]),
-    // Summed per variant where a product has them, since each carries its own cost and price.
-    Product.find({ businessId: oid, status: { $ne: "archived" }, trackInventory: true })
-      .select("price costPrice stock variants")
-      .lean()
-      .then((products) => [
-        products.reduce(
-          (total, product) => {
-            const summary = productSummary(product);
-            return {
-              cost: total.cost + summary.stockValue,
-              retail: total.retail + summary.retailValue,
-              units: total.units + summary.stock,
-            };
-          },
-          { cost: 0, retail: 0, units: 0 },
-        ),
-      ]),
-    websiteMetrics(businessId, from),
-  ]);
-
-  const customers = customerStats[0] ?? { total: 0, repeat: 0, spend: 0 };
-  const inventory = inventoryValue[0] ?? { cost: 0, retail: 0, units: 0 };
-  const grossProfit = current.revenue - current.cost;
-  const margin = current.revenue > 0 ? (grossProfit / current.revenue) * 100 : 0;
+  const { current, previous, series, top, expenseSplit, customers, inventory, web, grossProfit, margin } =
+    await getReportData(businessId, days);
 
   return (
     <div className="space-y-6">

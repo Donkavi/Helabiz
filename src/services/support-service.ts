@@ -9,6 +9,7 @@ import { User } from "@/models/User";
 import { Website } from "@/models/Website";
 import { OPEN_REQUEST_STATUSES, WebsiteRequest, type WebsiteRequestStatus } from "@/models/WebsiteRequest";
 import { REQUEST_PAGE_LABELS, isRequestPage, type RequestPage } from "@/lib/website-request";
+import { pushToBusiness } from "@/services/push-service";
 
 /**
  * Help from the Helabiz team: website build requests, the support access
@@ -421,6 +422,12 @@ async function postHelabizMessage(
     title: "New message from the Helabiz team",
     body: body.trim().split("\n")[0].slice(0, 140),
     href: "/support",
+  });
+  await pushToBusiness(businessId, {
+    title: "New message from the Helabiz team",
+    body: body.trim().split("\n")[0].slice(0, 140),
+    channel: "general",
+    data: { type: "support" },
   });
 
   return toChatMessage(created.toObject());
