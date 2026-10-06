@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Check, ChevronsUpDown, Loader2, Plus, Store } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,11 +24,22 @@ export function BusinessSwitcher({ businesses, activeId }: { businesses: Busines
   const switchTo = (id: string) => {
     if (id === activeId) return;
     startTransition(async () => {
-      await fetch("/api/businesses/switch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId: id }),
-      });
+      try {
+        const response = await fetch("/api/businesses/switch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ businessId: id }),
+        });
+        if (!response.ok) {
+          // Say why, rather than staying put without a word.
+          const data = (await response.json().catch(() => ({}))) as { error?: string };
+          toast.error(data.error ?? "Could not switch business");
+          return;
+        }
+      } catch {
+        toast.error("Could not switch business. Check your connection.");
+        return;
+      }
       router.push("/dashboard");
       router.refresh();
     });

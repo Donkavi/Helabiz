@@ -131,7 +131,7 @@ export async function requireBusiness(explicitId?: string, options: BusinessGate
 }
 
 /** Non-redirecting variant for API routes and Server Actions. */
-export async function resolveBusinessAccess(businessId: string) {
+export async function resolveBusinessAccess(businessId: string, options: BusinessGateOptions = {}) {
   const session = await auth();
   if (!session?.user?.id) throw new AccessError("You must be signed in");
   if (!Types.ObjectId.isValid(businessId)) throw new AccessError("Unknown business");
@@ -148,7 +148,7 @@ export async function resolveBusinessAccess(businessId: string) {
   // server actions and route handlers take, and they must not slip past it.
   const business = await Business.findById(businessId).select("status plan trialEndsAt planEndsAt").lean();
   if (business?.status === "suspended") throw new AccessError("This business is suspended");
-  if (business) {
+  if (business && !options.allowLocked) {
     const access = accessInfo(business);
     if (access.locked) {
       throw new AccessError(

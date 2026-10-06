@@ -10,7 +10,11 @@ export async function POST(request: Request) {
     if (!body.businessId) return NextResponse.json({ error: "businessId is required" }, { status: 400 });
 
     // Throws unless the signed-in user is actually a member of that business.
-    const access = await resolveBusinessAccess(body.businessId);
+    // A locked one (trial not started or over, plan lapsed) is still allowed:
+    // switching only chooses the business, and the dashboard gate then sends
+    // its owner to start the trial or renew — refusing here left people stuck
+    // in whichever business they were last in.
+    const access = await resolveBusinessAccess(body.businessId, { allowLocked: true });
 
     const store = await cookies();
     store.set(ACTIVE_BUSINESS_COOKIE, access.businessId, {
