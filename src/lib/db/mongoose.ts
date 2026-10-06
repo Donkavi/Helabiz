@@ -130,11 +130,20 @@ export async function connectDB() {
  * mongod abruptly loses writes it has not yet checkpointed to disk.
  */
 export async function shutdownDB() {
+  const server = global.__helabizMemoryServer;
+
+  // On Windows, stopping the embedded mongod is a hard kill — there is no
+  // signal it can shut down gracefully on — and whatever WiredTiger has not
+  // yet checkpointed is lost. That was the seed's last writes: the demo
+  // website stayed a draft. Force the checkpoint first.
+  if (server && mongoose.connection.db) {
+    await mongoose.connection.db.admin().command({ fsync: 1 }).catch(() => undefined);
+  }
+
   await mongoose.disconnect();
   cached.conn = null;
   cached.promise = null;
 
-  const server = global.__helabizMemoryServer;
   if (server) {
     await server.stop();
     global.__helabizMemoryServer = undefined;

@@ -5,6 +5,7 @@ import { hasAddon, type AddonSource } from "@/lib/addons";
 import { Customer } from "@/models/Customer";
 import { Notification } from "@/models/Notification";
 import { ShopMessage } from "@/models/ShopMessage";
+import { pushToBusiness } from "@/services/push-service";
 
 /**
  * Chat between a shop and its website customers ("Chat with customers").
@@ -148,6 +149,15 @@ export async function sendCustomerMessage(
       href: `/messages?customer=${customer.id}`,
     });
   }
+
+  // Unlike the bell, the phone hears every message: a chat is answered
+  // message by message, and the app groups them by conversation.
+  await pushToBusiness(businessId, {
+    title: customer.name,
+    body: body.trim().slice(0, 140),
+    channel: "messages",
+    data: { type: "message", customerId: customer.id },
+  });
 
   return toMessage(created.toObject());
 }

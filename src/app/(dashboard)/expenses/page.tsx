@@ -22,7 +22,7 @@ export default async function ExpensesPage() {
   await connectDB();
 
   const thisMonth = monthStart();
-  const lastMonth = monthStart(new Date(thisMonth.getFullYear(), thisMonth.getMonth() - 1, 1));
+  const lastMonth = monthStart(new Date(), 1);
 
   const [expenses, byCategory, monthTotals] = await Promise.all([
     Expense.find({ businessId }).sort({ date: -1 }).limit(300).lean(),
